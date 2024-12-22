@@ -1,1 +1,1 @@
-﻿
+﻿global using Domain.Core.Abstractions;
