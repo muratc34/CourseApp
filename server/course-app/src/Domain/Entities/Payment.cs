@@ -1,17 +1,19 @@
-﻿namespace Domain.Core.Entities;
+﻿namespace Domain.Entities;
 
 public class Payment : Entity, IAuditableEntity, ISoftDeletableEntity
 {
-    public Payment(Guid orderId, decimal amount, string status) : base()
+    public Payment(Guid orderId, decimal amount) : base()
     {
+        Ensure.NotEmpty(orderId, "The order id is required.", nameof(orderId));
+        Ensure.NotNegative(amount, "The amount is required.", nameof(amount));
+
         OrderId = orderId;
         Amount = amount;
-        Status = status;
     }
 
     public Payment()
     {
-        
+
     }
 
     public long CreatedOnUtc { get; }
@@ -21,10 +23,9 @@ public class Payment : Entity, IAuditableEntity, ISoftDeletableEntity
 
     public Guid OrderId { get; set; }
     public decimal Amount { get; set; }
-    public string Status { get; set; }
 
-    public static Payment Create(Guid orderId, decimal amount, string status)
+    public static Payment Create(Guid orderId, decimal amount)
     {
-        return new Payment(orderId, amount, status);
+        return new Payment(orderId, amount);
     }
 }

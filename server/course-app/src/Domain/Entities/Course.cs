@@ -1,9 +1,15 @@
-﻿namespace Domain.Core.Entities;
+﻿namespace Domain.Entities;
 
 public class Course : Entity, IAuditableEntity, ISoftDeletableEntity
 {
     public Course(string name, string description, decimal price, string? imageUrl, Guid categoryId, Guid instructorId) : base()
     {
+        Ensure.NotEmpty(name, "The name is required.", nameof(name));
+        Ensure.NotEmpty(name, "The description is required.", nameof(name));
+        Ensure.NotNegative(price, "The price is required", nameof(price));
+        Ensure.NotEmpty(categoryId, "The category id is required.", nameof(categoryId));
+        Ensure.NotEmpty(instructorId, "The instructuor id is required.", nameof(instructorId));
+
         Name = name;
         Description = description;
         Price = price;
@@ -13,7 +19,7 @@ public class Course : Entity, IAuditableEntity, ISoftDeletableEntity
     }
     public Course()
     {
-        
+
     }
 
     public long CreatedOnUtc { get; }
@@ -29,10 +35,9 @@ public class Course : Entity, IAuditableEntity, ISoftDeletableEntity
     public Guid CategoryId { get; private set; }
     public Guid InstructorId { get; private set; }
     public virtual Category? Category { get; private set; }
-    public virtual User? Instructor { get; private set; }
-    public virtual ICollection<User>? EnrolledUsers { get; private set; }
-    // Buraya bakacağım
-    public virtual ICollection<Order>? Orders { get; private set; }
+    public virtual ApplicationUser? Instructor { get; private set; }
+    public virtual ICollection<ApplicationUser>? EnrolledUsers { get; private set; }
+    public virtual ICollection<OrderDetail>? Orders { get; private set; }
 
     public static Course Create(string name, string description, decimal price, string? imageUrl, Guid categoryId, Guid instructorId)
     {

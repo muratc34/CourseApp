@@ -1,14 +1,16 @@
-﻿namespace Domain.Core.Entities;
+﻿namespace Domain.Entities;
 
 public class Category : Entity, IAuditableEntity, ISoftDeletableEntity
 {
     public Category(string name) : base()
     {
-        Name = name;    
+        Ensure.NotEmpty(name, "The name is required", nameof(name));
+
+        Name = name;
     }
     public Category()
     {
-        
+
     }
     public long CreatedOnUtc { get; }
     public long? ModifiedOnUtc { get; }
