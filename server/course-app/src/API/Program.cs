@@ -10,7 +10,7 @@ configuration
 
 builder.Services
     .AddApplication()
-    .AddInfrastructure();
+    .AddInfrastructure(configuration);
 // Add services to the container.
 
 builder.Services.AddControllers();

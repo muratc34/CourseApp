@@ -24,6 +24,8 @@ public class Payment : Entity, IAuditableEntity, ISoftDeletableEntity
     public Guid OrderId { get; set; }
     public decimal Amount { get; set; }
 
+    public virtual Order Order { get; set; }
+
     public static Payment Create(Guid orderId, decimal amount)
     {
         return new Payment(orderId, amount);
