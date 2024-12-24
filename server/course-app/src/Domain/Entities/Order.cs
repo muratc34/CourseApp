@@ -20,10 +20,10 @@ public class Order : Entity, IAuditableEntity, ISoftDeletableEntity
 
     public Guid UserId { get; private set; }
     public string Status { get; private set; }
-    public decimal TotalAmount => OrderDetails.Sum(od => od.Course.Price);
 
     public virtual ApplicationUser? User { get; set; }
-    public virtual ICollection<OrderDetail> OrderDetails { get; set; }
+    public virtual Payment Payment { get; set; }
+    public virtual ICollection<Course> Courses { get; set; }
 
     public static Order Create(Guid userId)
     {

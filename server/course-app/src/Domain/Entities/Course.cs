@@ -37,7 +37,7 @@ public class Course : Entity, IAuditableEntity, ISoftDeletableEntity
     public virtual Category? Category { get; private set; }
     public virtual ApplicationUser? Instructor { get; private set; }
     public virtual ICollection<ApplicationUser>? EnrolledUsers { get; private set; }
-    public virtual ICollection<OrderDetail>? Orders { get; private set; }
+    public virtual ICollection<Order>? Orders { get; private set; }
 
     public static Course Create(string name, string description, decimal price, string? imageUrl, Guid categoryId, Guid instructorId)
     {
