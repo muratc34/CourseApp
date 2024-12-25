@@ -21,7 +21,7 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> CreateUser(UserCreateDto userCreateDto)
     {
         var result = await _userService.CreateAsync(userCreateDto);
-        return result.IsSuccess ? CreatedAtAction(nameof(result.Data.Id), result) : result.ToProblemDetails();
+        return result.IsSuccess ? Created(nameof(result.Data.Id), result) : result.ToProblemDetails();
     }
 
     [HttpGet]

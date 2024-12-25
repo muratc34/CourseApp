@@ -1,5 +1,4 @@
-﻿
-namespace Infrastructure.Configurations;
+﻿namespace Infrastructure.Configurations;
 
 public sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
 {

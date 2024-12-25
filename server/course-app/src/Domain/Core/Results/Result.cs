@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace Domain.Core.Results;
+﻿namespace Domain.Core.Results;
 
 public class Result
 {

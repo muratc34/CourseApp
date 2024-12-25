@@ -1,14 +1,4 @@
-﻿using Application.Abstractions.Authentication;
-using Application.Abstractions.Repositories;
-using Application.Abstractions.UnitOfWorks;
-using Application.DTOs;
-using Domain.Authentication;
-using Domain.Core.Errors;
-using Domain.Core.Results;
-using Domain.Entities;
-using Microsoft.AspNetCore.Identity;
-
-namespace Application.Services;
+﻿namespace Application.Services;
 
 public interface IAuthenticationService
 {

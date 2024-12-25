@@ -43,4 +43,29 @@ public class Course : Entity, IAuditableEntity, ISoftDeletableEntity
     {
         return new Course(name, description, price, imageUrl, categoryId, instructorId);
     }
+
+    public Course Update(string? name, string? description, decimal? price, string? imageUrl, Guid? categoryId)
+    {
+        if (!string.IsNullOrEmpty(name)) 
+        {
+            Name = name;
+        }
+        if (!string.IsNullOrEmpty(description))
+        {
+            Description = description;
+        }
+        if (price != null && price > 0)
+        {
+            Price = (decimal)price;
+        }
+        if (!string.IsNullOrEmpty(imageUrl))
+        {
+            ImageUrl = imageUrl;
+        }
+        if (categoryId != null && categoryId != Guid.Empty)
+        {
+            CategoryId = (Guid)categoryId;
+        }
+        return this;
+    }
 }

@@ -1,4 +1,16 @@
-﻿global using Microsoft.Extensions.DependencyInjection;
+﻿global using Application.Abstractions.Authentication;
+global using Application.Abstractions.Repositories;
+global using Application.Abstractions.UnitOfWorks;
+global using Application.DTOs;
+global using Application.Services;
+global using Domain.Authentication;
 global using Domain.Core;
+global using Domain.Core.Errors;
+global using Domain.Core.Results;
+global using Domain.Entities;
+global using Microsoft.AspNetCore.Identity;
+global using Microsoft.EntityFrameworkCore;
 global using Microsoft.EntityFrameworkCore.Query;
+global using Microsoft.Extensions.DependencyInjection;
 global using System.Linq.Expressions;
+global using System.Security.Claims;

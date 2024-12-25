@@ -1,7 +1,4 @@
-﻿using Domain.Authentication;
-using Domain.Entities;
-
-namespace Application.Abstractions.Authentication;
+﻿namespace Application.Abstractions.Authentication;
 
 public interface IJwtProvider
 {

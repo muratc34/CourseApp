@@ -1,6 +1,4 @@
-﻿using Domain.Authentication;
-
-namespace Domain.Entities;
+﻿namespace Domain.Entities;
 
 public class ApplicationUser : IdentityUser<Guid>, IAuditableEntity
 {
