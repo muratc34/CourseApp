@@ -2,7 +2,7 @@
 
 public class AccessToken
 {
-    public AccessToken(string token, string refreshToken, DateTime tokenExpiration, DateTime refreshTokenExpiration)
+    public AccessToken(string token, string refreshToken, long tokenExpiration, long refreshTokenExpiration)
     {
         Token = token;
         RefreshToken = refreshToken;
@@ -11,6 +11,6 @@ public class AccessToken
     }
     public string Token { get; set; }
     public string RefreshToken { get; set; }
-    public DateTime TokenExpiration { get; set; }
-    public DateTime RefreshTokenExpiration { get; set; }
+    public long TokenExpiration { get; set; }
+    public long RefreshTokenExpiration { get; set; }
 }

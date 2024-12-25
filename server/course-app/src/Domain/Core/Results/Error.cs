@@ -1,4 +1,4 @@
-﻿namespace Domain.Core.Result;
+﻿namespace Domain.Core.Results;
 
 public record Error
 {
@@ -14,7 +14,7 @@ public record Error
 
     public string Code { get; }
     public string Description { get; }
-    public ErrorType Type{ get; }
+    public ErrorType Type { get; }
 
     public static Error Failure(string code, string description) =>
         new(code, description, ErrorType.Failure);
@@ -28,6 +28,9 @@ public record Error
     public static Error Conflict(string code, string description) =>
         new(code, description, ErrorType.Conflict);
 
+    public static Error Permission(string code, string decription) =>
+        new(code, decription, ErrorType.Permission);
+
 }
 
 public enum ErrorType
@@ -35,5 +38,6 @@ public enum ErrorType
     Failure = 0,
     Validation = 1,
     NotFound = 2,
-    Conflict = 3
+    Conflict = 3,
+    Permission = 4
 }

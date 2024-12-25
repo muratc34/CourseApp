@@ -1,38 +1,38 @@
-﻿using Domain.Core.Result;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Domain.Core.Results;
 
 public class Result
 {
-    protected Result(bool isSuccess, Error? error)
+    protected Result(bool isSuccess, IReadOnlyList<Error>? errors)
     {
-        if ((isSuccess && error != Error.None) || (!isSuccess && error == Error.None))
+        if ((isSuccess && errors.Count > 0) || (!isSuccess && errors.Count == 0))
         {
-            throw new ArgumentException("Invalid error", nameof(error));
+            throw new ArgumentException("Invalid error state", nameof(errors));
         }
 
         IsSuccess = isSuccess;
-        Error = error;
+        Errors = errors;
     }
     public bool IsSuccess { get; }
 
     [JsonIgnore]
-    public Error? Error { get; }
+    public IReadOnlyList<Error>? Errors { get; }
 
-    public static Result Success() => new Result(true, Error.None);
-    public static Result<TData> Success<TData>(TData data) => new(data, true, Error.None);
-
-    public static Result Failure(Error error) => new Result(false, error);
-    public static Result<TData> Failure<TData>(Error error) => new(default, false, error);
+    public static Result Success() => new Result(true, []);
+    public static Result<TData> Success<TData>(TData data) => new(data, true, []);
+    public static Result Failure(params Error[] errors) => new Result(false, errors);
+    public static Result Failure(IEnumerable<Error> errors) => new Result(false, errors.ToList());
+    public static Result<TData> Failure<TData>(params Error[] errors) => new(default, false, errors);
+    public static Result<TData> Failure<TData>(IEnumerable<Error> errors) => new(default, false, errors.ToList());
 }
 
 public class Result<TData> : Result
 {
     private readonly TData? _data;
 
-    protected internal Result(TData? data, bool isSuccess, Error? error)
-        : base(isSuccess, error)
+    protected internal Result(TData? data, bool isSuccess, IReadOnlyList<Error> errors)
+        : base(isSuccess, errors)
         => _data = data;
 
     public static implicit operator Result<TData>(TData data) => Success(data);

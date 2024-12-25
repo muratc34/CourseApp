@@ -4,7 +4,7 @@ public class JwtProvider : IJwtProvider
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly JwtSettings _jwtSettings;
-    private DateTime _accessTokenExpiration;
+    private long _accessTokenExpiration;
 
     public JwtProvider(UserManager<ApplicationUser> userManager, IOptions<JwtSettings> jwtSettings)
     {
@@ -14,8 +14,8 @@ public class JwtProvider : IJwtProvider
 
     public async Task<AccessToken> CreateToken(ApplicationUser user)
     {
-        _accessTokenExpiration = DateTime.Now.AddMinutes(_jwtSettings.AccessTokenExpirationInMinutes);
-        var refreshTokenExpiration = DateTime.Now.AddMinutes(_jwtSettings.RefreshTokenExpirationInMinutes);
+        _accessTokenExpiration = DateTimeOffset.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpirationInMinutes).ToUnixTimeSeconds();
+        var refreshTokenExpiration = DateTimeOffset.UtcNow.AddMinutes(_jwtSettings.RefreshTokenExpirationInMinutes).ToUnixTimeSeconds();
         var securityKey = SecurityKeyHelper.CreateSecurityKey(_jwtSettings.SecurityKey);
         var signingCredentials = SigningCredentialsHelper.CreateSigningCredentials(securityKey);
         var jwt = await CreateJwtSecurityToken(user, signingCredentials);
@@ -30,8 +30,8 @@ public class JwtProvider : IJwtProvider
             issuer: _jwtSettings.Issuer,
             audience: _jwtSettings.Audience,
             claims: await GetClaims(user),
-            notBefore: DateTime.Now,
-            expires: _accessTokenExpiration,
+            notBefore: DateTime.UtcNow,
+            expires: DateTimeOffset.FromUnixTimeSeconds(_accessTokenExpiration).DateTime,
             signingCredentials: signingCredentials
         );
         return jwt;

@@ -1,4 +1,6 @@
-﻿namespace Domain.Entities;
+﻿using Domain.Authentication;
+
+namespace Domain.Entities;
 
 public class ApplicationUser : IdentityUser<Guid>, IAuditableEntity, ISoftDeletableEntity
 {

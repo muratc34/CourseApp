@@ -1,4 +1,6 @@
-﻿namespace Infrastructure;
+﻿using Infrastructure.Contexts;
+
+namespace Infrastructure;
 
 public static class DependencyInjection
 {
@@ -14,7 +16,6 @@ public static class DependencyInjection
         services.AddIdentity<ApplicationUser, ApplicationRole>(opt =>
         {
             opt.User.RequireUniqueEmail = true;
-            //opt.SignIn.RequireConfirmedEmail = true;
         }).AddEntityFrameworkStores<DatabaseContext>().AddDefaultTokenProviders();
 
         services.AddAuthentication(options =>
@@ -37,6 +38,7 @@ public static class DependencyInjection
 
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<IJwtProvider, JwtProvider>();
 
         services.AddAuthorization();
