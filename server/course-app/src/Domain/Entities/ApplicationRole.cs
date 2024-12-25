@@ -1,6 +1,6 @@
 ﻿namespace Domain.Entities;
 
-public class ApplicationRole : IdentityRole<Guid>, IAuditableEntity, ISoftDeletableEntity
+public class ApplicationRole : IdentityRole<Guid>, IAuditableEntity
 {
     public ApplicationRole(string name) : base(name)
     {
@@ -9,8 +9,6 @@ public class ApplicationRole : IdentityRole<Guid>, IAuditableEntity, ISoftDeleta
 
     public long CreatedOnUtc { get; }
     public long? ModifiedOnUtc { get; }
-    public long? DeletedOnUtc { get; }
-    public bool Deleted { get; }
 
     public static ApplicationRole Create(string roleName)
     {
