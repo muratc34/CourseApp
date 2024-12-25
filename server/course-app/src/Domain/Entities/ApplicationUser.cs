@@ -2,7 +2,7 @@
 
 public class ApplicationUser : IdentityUser<Guid>, IAuditableEntity, ISoftDeletableEntity
 {
-    public ApplicationUser(string firstName, string lastName, string email, string? profilePictureUrl) : base()
+    public ApplicationUser(string firstName, string lastName, string email, string userName, string? profilePictureUrl) : base()
     {
         Ensure.NotEmpty(firstName, "The first name is required.", nameof(firstName));
         Ensure.NotEmpty(lastName, "The first name is required.", nameof(firstName));
@@ -11,6 +11,7 @@ public class ApplicationUser : IdentityUser<Guid>, IAuditableEntity, ISoftDeleta
         FirstName = firstName;
         LastName = lastName;
         Email = email;
+        UserName = userName;
         ProfilePictureUrl = profilePictureUrl;
     }
 
@@ -28,8 +29,8 @@ public class ApplicationUser : IdentityUser<Guid>, IAuditableEntity, ISoftDeleta
     public virtual ICollection<Course>? CoursesCreated { get; private set; }
     public virtual ICollection<Course>? CoursesEnrolled { get; private set; }
 
-    public static ApplicationUser Create(string firstName, string lastName, string email, string? profilePictureUrl)
+    public static ApplicationUser Create(string firstName, string lastName, string email, string userName, string? profilePictureUrl)
     {
-        return new ApplicationUser(firstName, lastName, email, profilePictureUrl);
+        return new ApplicationUser(firstName, lastName, email, userName, profilePictureUrl);
     }
 }

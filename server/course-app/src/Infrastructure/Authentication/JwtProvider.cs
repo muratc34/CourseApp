@@ -1,15 +1,4 @@
-﻿using Application.Abstractions.Authentication;
-using Domain.Authentication;
-using Infrastructure.Authentication.Encryption;
-using Infrastructure.Authentication.Settings;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography;
-
-namespace Infrastructure.Authentication;
+﻿namespace Infrastructure.Authentication;
 
 public class JwtProvider : IJwtProvider
 {

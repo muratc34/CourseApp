@@ -1,4 +1,5 @@
 ﻿using Domain.Core.Result;
+using System.Text.Json.Serialization;
 
 namespace Domain.Core.Results;
 
@@ -15,6 +16,8 @@ public class Result
         Error = error;
     }
     public bool IsSuccess { get; }
+
+    [JsonIgnore]
     public Error? Error { get; }
 
     public static Result Success() => new Result(true, Error.None);

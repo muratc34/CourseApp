@@ -1,6 +1,4 @@
-﻿using Microsoft.IdentityModel.Tokens;
-
-namespace Infrastructure.Authentication.Encryption;
+﻿namespace Infrastructure.Authentication.Encryption;
 
 public class SigningCredentialsHelper
 {

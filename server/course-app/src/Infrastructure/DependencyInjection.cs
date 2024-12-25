@@ -1,11 +1,4 @@
-﻿using Application.Abstractions.Authentication;
-using Infrastructure.Authentication;
-using Infrastructure.Authentication.Encryption;
-using Infrastructure.Authentication.Settings;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
-
-namespace Infrastructure;
+﻿namespace Infrastructure;
 
 public static class DependencyInjection
 {
@@ -18,13 +11,19 @@ public static class DependencyInjection
             options.UseNpgsql(configuration.GetConnectionString("Database"));
         });
 
+        services.AddIdentity<ApplicationUser, ApplicationRole>(opt =>
+        {
+            opt.User.RequireUniqueEmail = true;
+            //opt.SignIn.RequireConfirmedEmail = true;
+        }).AddEntityFrameworkStores<DatabaseContext>().AddDefaultTokenProviders();
+
         services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
             options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
         }).AddJwtBearer(options =>
         {
-            options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+            options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuer = true,
                 ValidateAudience = true,
@@ -40,10 +39,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IJwtProvider, JwtProvider>();
 
-        services.AddIdentity<ApplicationUser, ApplicationRole>(opt =>
-        {
-            opt.User.RequireUniqueEmail = true;
-        }).AddEntityFrameworkStores<DatabaseContext>().AddDefaultTokenProviders();
+        services.AddAuthorization();
 
         return services;
     }
