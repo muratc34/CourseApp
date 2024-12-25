@@ -25,4 +25,13 @@ public class Category : Entity, IAuditableEntity, ISoftDeletableEntity
     {
         return new Category(name);
     }
+
+    public Category Update(string name)
+    {
+        if (!string.IsNullOrEmpty(name))
+        {
+            Name = name;
+        }
+        return this;
+    }
 }

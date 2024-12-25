@@ -24,4 +24,9 @@ public static class DomainErrors
         public static Error NotFound => Error.NotFound("RefreshToken.NotFound", "The refresh token is not exist.");
         public static Error TokenExpired => Error.NotFound("RefreshToken.TokenExpired", "The refresh token has expired.");
     }
+
+    public static class Category
+    {
+        public static Error NotFound => Error.NotFound("Category.NotFound", "The category is not exist.");
+    }
 }
