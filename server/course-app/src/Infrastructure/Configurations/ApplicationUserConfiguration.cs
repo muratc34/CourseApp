@@ -9,14 +9,6 @@ public sealed class ApplicationUserConfiguration : IEntityTypeConfiguration<Appl
 
         builder.Property(u => u.ModifiedOnUtc);
 
-        builder.Property(u => u.DeletedOnUtc);
-
-        builder.Property(u => u.Deleted)
-            .IsRequired()
-            .HasDefaultValue(false);
-
-        builder.HasQueryFilter(u => !u.Deleted);
-
         builder.Property(u => u.FirstName)
             .HasMaxLength(100)
             .IsRequired();

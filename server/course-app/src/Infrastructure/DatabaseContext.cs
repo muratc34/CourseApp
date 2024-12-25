@@ -88,4 +88,19 @@ public class DatabaseContext : IdentityDbContext<ApplicationUser, ApplicationRol
             UpdateDeletedEntityEntryReferencesToUnchanged(referenceEntry.TargetEntry);
         }
     }
+
+    private static void RestoreDeletedEntityEntryReferences(EntityEntry entityEntry)
+    {
+        if (!entityEntry.References.Any())
+        {
+            return;
+        }
+
+        foreach (var referenceEntry in entityEntry.References.Where(r => r.TargetEntry != null && r.TargetEntry.State == EntityState.Modified))
+        {
+            referenceEntry.TargetEntry.State = EntityState.Modified;
+
+            RestoreDeletedEntityEntryReferences(referenceEntry.TargetEntry);
+        }
+    }
 }

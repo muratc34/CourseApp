@@ -12,13 +12,5 @@ public class ApplicationRoleConfiguration : IEntityTypeConfiguration<Application
             .IsRequired();
 
         builder.Property(role => role.ModifiedOnUtc);
-
-        builder.Property(r => r.DeletedOnUtc);
-
-        builder.Property(role => role.Deleted)
-            .IsRequired()
-            .HasDefaultValue(false);
-
-        builder.HasQueryFilter(role => !role.Deleted);
     }
 }

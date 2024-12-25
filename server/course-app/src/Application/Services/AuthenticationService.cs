@@ -12,7 +12,10 @@ namespace Application.Services;
 
 public interface IAuthenticationService
 {
-    Task<Result<AccessToken>> CreateTokenAsync(LoginDto loginDto);
+    Task<Result<AccessToken>> LoginAsync(LoginDto loginDto);
+    Task<Result> ChangePassword(Guid userId, ChangePasswordDto changePasswordDto);
+    Task<Result<AccessToken>> CreateTokenByRefreshToken(string refreshToken);
+    Task<Result> ExterminateRefreshToken(string refreshToken);
 }
 
 public class AuthenticationService : IAuthenticationService
@@ -34,7 +37,7 @@ public class AuthenticationService : IAuthenticationService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<Result<AccessToken>> CreateTokenAsync(LoginDto loginDto)
+    public async Task<Result<AccessToken>> LoginAsync(LoginDto loginDto)
     {
         var user = await _userManager.FindByEmailAsync(loginDto.Email);
         if (user == null)
@@ -61,5 +64,61 @@ public class AuthenticationService : IAuthenticationService
         await _unitOfWork.SaveChangesAsync();
         return Result.Success(token);
 
+    }
+
+    public async Task<Result> ChangePassword(Guid userId, ChangePasswordDto changePasswordDto)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+        {
+            return Result.Failure(DomainErrors.User.NotFound(userId));
+        }
+
+        var result = await _userManager.ChangePasswordAsync(user, changePasswordDto.OldPassword, changePasswordDto.NewPassword);
+        if (!result.Succeeded)
+        {
+            var errors = result.Errors
+                .Select(x => DomainErrors.Authentication.CannotChangePassword(x.Description))
+                .ToList();
+            return Result.Failure(errors);
+        }
+        return Result.Success();
+    }
+
+    public async Task<Result<AccessToken>> CreateTokenByRefreshToken(string refreshToken)
+    {
+        var existRefreshToken = await _refreshTokenRepository.GetAsync(x => x.Code.Equals(refreshToken));
+        if (existRefreshToken is null)
+        {
+            return Result.Failure<AccessToken>(DomainErrors.RefreshToken.NotFound);
+        }
+        if (existRefreshToken.Expiration < DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+        {
+            return Result.Failure<AccessToken>(DomainErrors.RefreshToken.TokenExpired);
+        }
+
+        var user = await _userManager.FindByIdAsync(existRefreshToken.UserId.ToString());
+        if (user is null)
+        {
+            return Result.Failure<AccessToken>(DomainErrors.User.NotFound(existRefreshToken.UserId));
+        }
+        var token = await _jwtProvider.CreateToken(user);
+        existRefreshToken.UpdateToken(token.RefreshToken, token.RefreshTokenExpiration);
+
+        await _unitOfWork.SaveChangesAsync();
+        return Result.Success(token);
+    }
+
+    public async Task<Result> ExterminateRefreshToken(string refreshToken)
+    {
+        var existRefreshToken = await _refreshTokenRepository.GetAsync(x => x.Code.Equals(refreshToken));
+        if (existRefreshToken is null)
+        {
+            return Result.Failure<AccessToken>(DomainErrors.RefreshToken.NotFound);
+        }
+
+        _refreshTokenRepository.Delete(existRefreshToken);
+        await _unitOfWork.SaveChangesAsync();
+        return Result.Success();
     }
 }
