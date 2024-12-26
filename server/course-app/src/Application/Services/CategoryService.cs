@@ -1,12 +1,4 @@
-﻿using Application.Abstractions.Repositories;
-using Application.Abstractions.UnitOfWorks;
-using Application.DTOs;
-using Domain.Core.Errors;
-using Domain.Core.Results;
-using Domain.Entities;
-using Microsoft.EntityFrameworkCore;
-
-namespace Application.Services;
+﻿namespace Application.Services;
 
 public interface ICategoryService
 {
@@ -18,10 +10,10 @@ public interface ICategoryService
 
 public class CategoryService : ICategoryService
 {
-    private readonly IRepository<Category> _categoryRepository;
+    private readonly ICategoryRepository _categoryRepository;
     private readonly IUnitOfWork _unitOfWork;
 
-    public CategoryService(IRepository<Category> categoryRepository, IUnitOfWork unitOfWork)
+    public CategoryService(ICategoryRepository categoryRepository, IUnitOfWork unitOfWork)
     {
         _categoryRepository = categoryRepository;
         _unitOfWork = unitOfWork;

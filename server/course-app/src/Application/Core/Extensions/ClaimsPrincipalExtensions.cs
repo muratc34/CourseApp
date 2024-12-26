@@ -1,6 +1,4 @@
-﻿using System.Security.Claims;
-
-namespace Application.Core.Extensions;
+﻿namespace Application.Core.Extensions;
 
 public static class ClaimsPrincipalExtensions
 {

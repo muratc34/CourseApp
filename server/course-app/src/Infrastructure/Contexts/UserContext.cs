@@ -1,7 +1,4 @@
-﻿using Application.Core.Extensions;
-using Microsoft.AspNetCore.Http;
-
-namespace Infrastructure.Contexts;
+﻿namespace Infrastructure.Contexts;
 
 public sealed class UserContext(IHttpContextAccessor httpContextAccessor) : IUserContext
 {

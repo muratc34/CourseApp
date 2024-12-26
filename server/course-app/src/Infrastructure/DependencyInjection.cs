@@ -1,7 +1,4 @@
-﻿using Infrastructure.Contexts;
-using Microsoft.Extensions.Options;
-
-namespace Infrastructure;
+﻿namespace Infrastructure;
 
 public static class DependencyInjection
 {
@@ -38,6 +35,9 @@ public static class DependencyInjection
         });
 
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+        services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<ICourseRepository, CourseRepository>();
+
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<IJwtProvider, JwtProvider>();

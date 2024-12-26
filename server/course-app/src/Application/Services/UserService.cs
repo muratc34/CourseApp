@@ -1,12 +1,4 @@
-﻿using Application.Abstractions.Authentication;
-using Application.DTOs;
-using Domain.Core.Errors;
-using Domain.Core.Results;
-using Domain.Entities;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-
-namespace Application.Services;
+﻿namespace Application.Services;
 
 public interface IUserService
 {

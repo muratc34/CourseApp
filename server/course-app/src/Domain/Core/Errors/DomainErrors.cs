@@ -1,7 +1,4 @@
-﻿using Domain.Core.Results;
-using System.Xml.Serialization;
-
-namespace Domain.Core.Errors;
+﻿namespace Domain.Core.Errors;
 
 public static class DomainErrors
 {
@@ -28,5 +25,9 @@ public static class DomainErrors
     public static class Category
     {
         public static Error NotFound => Error.NotFound("Category.NotFound", "The category is not exist.");
+    }
+    public static class Course
+    {
+        public static Error NotFound => Error.NotFound("Course.NotFound", "The course is not exist.");
     }
 }

@@ -1,6 +1,4 @@
-﻿using Domain.Entities;
-
-namespace Domain.Authentication;
+﻿namespace Domain.Authentication;
 
 public class RefreshToken : Entity, ISoftDeletableEntity, IAuditableEntity
 {

@@ -1,14 +1,14 @@
-﻿using Application.Services;
-
-namespace Application;
+﻿namespace Application;
 
 public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        services.AddScoped<IUserService, UserService>();
+
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<ICourseService, CourseService>();
+        services.AddScoped<IUserService, UserService>();
 
         return services;
     }

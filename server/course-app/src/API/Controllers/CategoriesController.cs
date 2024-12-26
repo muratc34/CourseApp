@@ -20,7 +20,7 @@ public class CategoriesController : ControllerBase
     public async Task<IActionResult> Create(CategoryCreateDto categoryCreateDto)
     {
         var result = await _categoryService.Create(categoryCreateDto);
-        return result.IsSuccess ? Ok(result) : result.ToProblemDetails();
+        return result.IsSuccess ? Created(nameof(result.Data.Id), result) : result.ToProblemDetails();
     }
 
     [HttpPut]
@@ -28,7 +28,7 @@ public class CategoriesController : ControllerBase
     public async Task<IActionResult> Update(Guid categoryId, CategoryUpdateDto categoryUpdateDto)
     {
         var result = await _categoryService.Update(categoryId, categoryUpdateDto);
-        return result.IsSuccess ? Ok(result) : result.ToProblemDetails();
+        return result.IsSuccess ? NoContent() : result.ToProblemDetails();
     }
 
     [HttpDelete]
@@ -36,11 +36,11 @@ public class CategoriesController : ControllerBase
     public async Task<IActionResult> Delete(Guid categoryId)
     {
         var result = await _categoryService.Delete(categoryId);
-        return result.IsSuccess ? Ok(result) : result.ToProblemDetails();
+        return result.IsSuccess ? NoContent() : result.ToProblemDetails();
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetCategories(CancellationToken cancellationToekn)
+    public async Task<IActionResult> Get(CancellationToken cancellationToekn)
     {
         return Ok(await _categoryService.GetCategories(cancellationToekn));
     }

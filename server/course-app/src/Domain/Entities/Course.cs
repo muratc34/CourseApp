@@ -37,10 +37,35 @@ public class Course : Entity, IAuditableEntity, ISoftDeletableEntity
     public virtual Category? Category { get; private set; }
     public virtual ApplicationUser? Instructor { get; private set; }
     public virtual ICollection<ApplicationUser>? EnrolledUsers { get; private set; }
-    public virtual ICollection<Order>? Orders { get; private set; }
+    public ICollection<CourseOrder> CourseOrders { get; set; }
 
     public static Course Create(string name, string description, decimal price, string? imageUrl, Guid categoryId, Guid instructorId)
     {
         return new Course(name, description, price, imageUrl, categoryId, instructorId);
+    }
+
+    public Course Update(string? name, string? description, decimal? price, string? imageUrl, Guid? categoryId)
+    {
+        if (!string.IsNullOrEmpty(name)) 
+        {
+            Name = name;
+        }
+        if (!string.IsNullOrEmpty(description))
+        {
+            Description = description;
+        }
+        if (price != null && price > 0)
+        {
+            Price = (decimal)price;
+        }
+        if (!string.IsNullOrEmpty(imageUrl))
+        {
+            ImageUrl = imageUrl;
+        }
+        if (categoryId != null && categoryId != Guid.Empty)
+        {
+            CategoryId = (Guid)categoryId;
+        }
+        return this;
     }
 }
