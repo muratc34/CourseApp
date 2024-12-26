@@ -1,10 +1,14 @@
-﻿namespace Infrastructure;
+﻿using Application.Services;
+using Infrastructure.Iyzıco.Settings;
+
+namespace Infrastructure;
 
 public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SettingsKey));
+        services.Configure<IyzicoSettings>(configuration.GetSection(IyzicoSettings.SettingsKey));
 
         services.AddDbContext<DatabaseContext>(options =>
         {
@@ -37,6 +41,8 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<ICourseRepository, CourseRepository>();
+        services.AddScoped<IOrderRepository,  OrderRepository>();
+        services.AddScoped<IPaymentRepository, PaymentRepository>();
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IUserContext, UserContext>();

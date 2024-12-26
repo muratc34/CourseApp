@@ -2,13 +2,11 @@
 
 public class Payment : Entity, IAuditableEntity, ISoftDeletableEntity
 {
-    public Payment(Guid orderId, decimal amount) : base()
+    public Payment(Guid orderId) : base()
     {
         Ensure.NotEmpty(orderId, "The order id is required.", nameof(orderId));
-        Ensure.NotNegative(amount, "The amount is required.", nameof(amount));
 
         OrderId = orderId;
-        Amount = amount;
     }
 
     public Payment()
@@ -26,8 +24,8 @@ public class Payment : Entity, IAuditableEntity, ISoftDeletableEntity
 
     public virtual Order Order { get; set; }
 
-    public static Payment Create(Guid orderId, decimal amount)
+    public static Payment Create(Guid orderId)
     {
-        return new Payment(orderId, amount);
+        return new Payment(orderId);
     }
 }

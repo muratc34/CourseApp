@@ -8,6 +8,7 @@ public class Order : Entity, IAuditableEntity, ISoftDeletableEntity
 
         UserId = userId;
         Status = OrderStatuses.Pending;
+        CourseOrders = [];
     }
     public Order()
     {
@@ -22,8 +23,8 @@ public class Order : Entity, IAuditableEntity, ISoftDeletableEntity
     public string Status { get; private set; }
 
     public virtual ApplicationUser? User { get; set; }
-    public virtual Payment Payment { get; set; }
-    public virtual ICollection<Course> Courses { get; set; }
+    public virtual Payment? Payment { get; set; }
+    public ICollection<CourseOrder> CourseOrders { get; set; }
 
     public static Order Create(Guid userId)
     {

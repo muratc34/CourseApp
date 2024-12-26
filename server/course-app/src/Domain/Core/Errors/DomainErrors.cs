@@ -30,4 +30,8 @@ public static class DomainErrors
     {
         public static Error NotFound => Error.NotFound("Course.NotFound", "The course is not exist.");
     }
+    public static class Order
+    {
+        public static Error NotFound => Error.NotFound("Course.NotFound", "The order is not exist.");
+    }
 }
