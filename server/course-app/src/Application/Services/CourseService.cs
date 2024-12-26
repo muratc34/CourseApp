@@ -1,7 +1,4 @@
-﻿using Application.DTOs;
-using System.Threading;
-
-namespace Application.Services;
+﻿namespace Application.Services;
 
 
 public interface ICourseService

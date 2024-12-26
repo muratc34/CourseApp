@@ -54,7 +54,7 @@ public class CoursesController : ControllerBase
     }
 
     [HttpGet]
-    [Route("Category/{categoryId}")]
+    [Route("Categories/{categoryId}")]
     public async Task<IActionResult> Get(Guid categoryId, CancellationToken cancellationToken)
     {
         var result = await _courseService.GetCourseByCategoryId(categoryId, cancellationToken);
