@@ -9,6 +9,7 @@ public interface ICourseService
     Task<Result<List<CourseDto>>> GetCourses(CancellationToken cancellationToken);
     Task<Result<CourseDetailDto>> GetCourseById(Guid courseId);
     Task<Result<List<CourseDto>>> GetCourseByCategoryId(Guid categoryId, CancellationToken cancellationToken);
+    Task<Result> RegisterUserToCourse(Guid courseId, Guid userId);
 }
 
 public class CourseService : ICourseService
@@ -16,12 +17,18 @@ public class CourseService : ICourseService
     private readonly ICourseRepository _courseRepository;
     private readonly ICategoryRepository _categoryRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public CourseService(ICourseRepository courseRepository, ICategoryRepository categoryRepository, IUnitOfWork unitOfWork)
+    public CourseService(
+        ICourseRepository courseRepository, 
+        ICategoryRepository categoryRepository, 
+        IUnitOfWork unitOfWork, 
+        UserManager<ApplicationUser> userManager)
     {
         _courseRepository = courseRepository;
         _unitOfWork = unitOfWork;
         _categoryRepository = categoryRepository;
+        _userManager = userManager;
     }
 
     public async Task<Result<CourseDetailDto>> Create(CourseCreateDto courseCreateDto)
@@ -138,6 +145,26 @@ public class CourseService : ICourseService
             }
         }
         course.Update(courseUpdateDto.Name, courseUpdateDto.Description, courseUpdateDto.Price, courseUpdateDto.ImageUrl, courseUpdateDto.CategoryId);
+        _courseRepository.Update(course);
+        await _unitOfWork.SaveChangesAsync();
+
+        return Result.Success();
+    }
+
+    public async Task<Result> RegisterUserToCourse(Guid courseId, Guid userId)
+    {
+        var course = await _courseRepository.GetAsync(x => x.Id == courseId, x => x.Include(x => x.Enrollments));
+        if (course is null)
+        {
+            return Result.Failure(DomainErrors.Course.NotFound);
+        }
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+        {
+            return Result.Failure(DomainErrors.User.NotFound(userId));
+        }
+
+        course.AddUserToCourse(new Enrollment(userId, courseId));
         _courseRepository.Update(course);
         await _unitOfWork.SaveChangesAsync();
 

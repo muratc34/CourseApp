@@ -26,7 +26,7 @@ public class ApplicationUser : IdentityUser<Guid>, IAuditableEntity
 
     public virtual ICollection<Order>? Orders { get; private set; }
     public virtual ICollection<Course>? CoursesCreated { get; private set; }
-    public virtual ICollection<Course>? CoursesEnrolled { get; private set; }
+    public virtual ICollection<Enrollment> Enrollments { get; private set; }
 
     public static ApplicationUser Create(string firstName, string lastName, string email, string userName, string? profilePictureUrl)
     {

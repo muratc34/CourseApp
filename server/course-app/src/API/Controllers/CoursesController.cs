@@ -60,4 +60,12 @@ public class CoursesController : ControllerBase
         var result = await _courseService.GetCourseByCategoryId(categoryId, cancellationToken);
         return result.IsSuccess ? Ok(result) : result.ToProblemDetails();
     }
+
+    [HttpPost]
+    [Route("{courseId}/User/{userId}")]
+    public async Task<IActionResult> AddUserToCourse(Guid courseId, Guid userId)
+    {
+        var result = await _courseService.RegisterUserToCourse(courseId, userId);
+        return result.IsSuccess ? NoContent() : result.ToProblemDetails();
+    }
 }

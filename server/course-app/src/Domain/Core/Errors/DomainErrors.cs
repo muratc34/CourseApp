@@ -10,6 +10,7 @@ public static class DomainErrors
         public static Error CannotCreate(string message) => Error.Failure("User.CannotCreate", message);
         public static Error CannotUpdate(string message) => Error.Failure("User.CannotUpdate", message);
         public static Error CannotDelete(string message) => Error.Failure("User.CannotDelete", message);
+        public static Error AlreadyEnrollment => Error.Conflict("User.AlreadyEnrollment", "The specified user is already enrollment to specified course.");
     }
     public static class Authentication
     {

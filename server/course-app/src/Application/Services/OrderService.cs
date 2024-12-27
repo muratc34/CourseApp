@@ -11,16 +11,27 @@ internal class OrderService : IOrderService
     private readonly IOrderRepository _orderRepository;
     private readonly ICourseRepository _courseRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public OrderService(IOrderRepository orderRepository, ICourseRepository courseRepository, IUnitOfWork unitOfWork)
+    public OrderService(
+        IOrderRepository orderRepository, 
+        ICourseRepository courseRepository,
+        IUnitOfWork unitOfWork,
+        UserManager<ApplicationUser> userManager)
     {
         _orderRepository = orderRepository;
         _courseRepository = courseRepository;
         _unitOfWork = unitOfWork;
+        _userManager = userManager;
     }
 
     public async Task<Result<OrderDto>> Create(OrderCreateDto orderCreateDto)
     {
+        var user = await _userManager.Users.Where(u => u.Id == orderCreateDto.UserId).Include(u => u.Enrollments).FirstOrDefaultAsync();
+        if (user is null)
+        {
+            return Result.Failure<OrderDto>(DomainErrors.User.NotFound(orderCreateDto.UserId));
+        }
 
         var order = Order.Create(orderCreateDto.UserId);
         foreach (var courseId in orderCreateDto.CourseIds)
@@ -30,7 +41,11 @@ internal class OrderService : IOrderService
             {
                 return Result.Failure<OrderDto>(DomainErrors.Course.NotFound);
             }
-            order.CourseOrders.Add(new CourseOrder(courseId, order.Id));
+            if(user.Enrollments.Any(x => x.CourseId == courseId))
+            {
+                return Result.Failure<OrderDto>(DomainErrors.User.AlreadyEnrollment);
+            }
+            order.OrderDetails.Add(new OrderDetail(courseId, order.Id));
         }
 
         await _orderRepository.CreateAsync(order);
@@ -48,6 +63,7 @@ internal class OrderService : IOrderService
         }
         _orderRepository.Delete(order);
         order.SetStatusAsCancelled();
+        _orderRepository.Update(order);
         await _unitOfWork.SaveChangesAsync();
         return Result.Success();
     }
@@ -62,7 +78,7 @@ internal class OrderService : IOrderService
                 x.ModifiedOnUtc,
                 x.UserId,
                 x.Status,
-                x.CourseOrders.Select(oc => new CourseDto(
+                x.OrderDetails.Select(oc => new CourseDto(
                     oc.Course.Id,
                     oc.Course.CreatedOnUtc,
                     oc.Course.ModifiedOnUtc,

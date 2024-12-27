@@ -1,8 +1,8 @@
 ﻿namespace Domain.Entities;
 
-public class CourseOrder
+public class OrderDetail
 {
-    public CourseOrder(Guid courseId, Guid orderId)
+    public OrderDetail(Guid courseId, Guid orderId)
     {
         CourseId = courseId;
         OrderId = orderId;
@@ -11,5 +11,4 @@ public class CourseOrder
     public Course Course { get; set; }
     public Guid OrderId { get; set; }
     public Order Order { get; set; }
-
 }
