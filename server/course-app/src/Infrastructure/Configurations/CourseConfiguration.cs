@@ -40,8 +40,5 @@ public class CourseConfiguration : IEntityTypeConfiguration<Course>
             .WithMany(i => i.CoursesCreated)
             .HasForeignKey(c => c.InstructorId)
             .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasMany(c => c.EnrolledUsers)
-            .WithMany(u => u.CoursesEnrolled);
     }
 }

@@ -27,7 +27,7 @@ public class Repository<TEntity> : IRepository<TEntity>
     }
 
     public IQueryable<TEntity> Find(Expression<Func<TEntity, bool>> predicate)
-        => _context.Set<TEntity>().AsNoTracking().Where(predicate);
+        => _context.Set<TEntity>().Where(predicate);
 
     public IQueryable<TEntity> FindAll()
         => _context.Set<TEntity>().AsNoTracking();
@@ -44,7 +44,7 @@ public class Repository<TEntity> : IRepository<TEntity>
 
     public async Task<TEntity?> GetAsync(Expression<Func<TEntity, bool>> predicate, Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null)
     {
-        IQueryable<TEntity> queryable = _context.Set<TEntity>().AsNoTracking();
+        IQueryable<TEntity> queryable = _context.Set<TEntity>();
         if (include is not null)
         {
             queryable = include(queryable);

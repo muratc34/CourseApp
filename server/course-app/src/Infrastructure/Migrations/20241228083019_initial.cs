@@ -19,8 +19,6 @@ namespace Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedOnUtc = table.Column<long>(type: "bigint", nullable: false),
                     ModifiedOnUtc = table.Column<long>(type: "bigint", nullable: true),
-                    DeletedOnUtc = table.Column<long>(type: "bigint", nullable: true),
-                    Deleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     Name = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
                     NormalizedName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     ConcurrencyStamp = table.Column<string>(type: "text", nullable: true)
@@ -37,8 +35,6 @@ namespace Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedOnUtc = table.Column<long>(type: "bigint", nullable: false),
                     ModifiedOnUtc = table.Column<long>(type: "bigint", nullable: true),
-                    DeletedOnUtc = table.Column<long>(type: "bigint", nullable: true),
-                    Deleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     FirstName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     LastName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     ProfilePictureUrl = table.Column<string>(type: "text", nullable: true),
@@ -76,6 +72,24 @@ namespace Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Categories", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RefreshTokens",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedOnUtc = table.Column<long>(type: "bigint", nullable: false),
+                    ModifiedOnUtc = table.Column<long>(type: "bigint", nullable: true),
+                    DeletedOnUtc = table.Column<long>(type: "bigint", nullable: true),
+                    Deleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Code = table.Column<string>(type: "text", nullable: false),
+                    Expiration = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RefreshTokens", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -193,6 +207,11 @@ namespace Infrastructure.Migrations
                     ModifiedOnUtc = table.Column<long>(type: "bigint", nullable: true),
                     DeletedOnUtc = table.Column<long>(type: "bigint", nullable: true),
                     Deleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    TcNo = table.Column<string>(type: "text", nullable: false),
+                    City = table.Column<string>(type: "text", nullable: false),
+                    Country = table.Column<string>(type: "text", nullable: false),
+                    Address = table.Column<string>(type: "text", nullable: false),
+                    ZipCode = table.Column<string>(type: "text", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false)
                 },
@@ -264,57 +283,54 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ApplicationUserCourse",
+                name: "Enrollment",
                 columns: table => new
                 {
-                    CoursesEnrolledId = table.Column<Guid>(type: "uuid", nullable: false),
-                    EnrolledUsersId = table.Column<Guid>(type: "uuid", nullable: false)
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CourseId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedOnUtc = table.Column<long>(type: "bigint", nullable: false),
+                    ModifiedOnUtc = table.Column<long>(type: "bigint", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ApplicationUserCourse", x => new { x.CoursesEnrolledId, x.EnrolledUsersId });
+                    table.PrimaryKey("PK_Enrollment", x => new { x.UserId, x.CourseId });
                     table.ForeignKey(
-                        name: "FK_ApplicationUserCourse_AspNetUsers_EnrolledUsersId",
-                        column: x => x.EnrolledUsersId,
+                        name: "FK_Enrollment_AspNetUsers_UserId",
+                        column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_ApplicationUserCourse_Courses_CoursesEnrolledId",
-                        column: x => x.CoursesEnrolledId,
+                        name: "FK_Enrollment_Courses_CourseId",
+                        column: x => x.CourseId,
                         principalTable: "Courses",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "CourseOrder",
+                name: "OrderDetail",
                 columns: table => new
                 {
-                    CoursesId = table.Column<Guid>(type: "uuid", nullable: false),
-                    OrdersId = table.Column<Guid>(type: "uuid", nullable: false)
+                    CourseId = table.Column<Guid>(type: "uuid", nullable: false),
+                    OrderId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CourseOrder", x => new { x.CoursesId, x.OrdersId });
+                    table.PrimaryKey("PK_OrderDetail", x => new { x.CourseId, x.OrderId });
                     table.ForeignKey(
-                        name: "FK_CourseOrder_Courses_CoursesId",
-                        column: x => x.CoursesId,
+                        name: "FK_OrderDetail_Courses_CourseId",
+                        column: x => x.CourseId,
                         principalTable: "Courses",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_CourseOrder_Orders_OrdersId",
-                        column: x => x.OrdersId,
+                        name: "FK_OrderDetail_Orders_OrderId",
+                        column: x => x.OrderId,
                         principalTable: "Orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ApplicationUserCourse_EnrolledUsersId",
-                table: "ApplicationUserCourse",
-                column: "EnrolledUsersId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
@@ -360,11 +376,6 @@ namespace Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_CourseOrder_OrdersId",
-                table: "CourseOrder",
-                column: "OrdersId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Courses_CategoryId",
                 table: "Courses",
                 column: "CategoryId");
@@ -373,6 +384,16 @@ namespace Infrastructure.Migrations
                 name: "IX_Courses_InstructorId",
                 table: "Courses",
                 column: "InstructorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Enrollment_CourseId",
+                table: "Enrollment",
+                column: "CourseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderDetail_OrderId",
+                table: "OrderDetail",
+                column: "OrderId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_UserId",
@@ -390,9 +411,6 @@ namespace Infrastructure.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "ApplicationUserCourse");
-
-            migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
             migrationBuilder.DropTable(
@@ -408,10 +426,16 @@ namespace Infrastructure.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "CourseOrder");
+                name: "Enrollment");
+
+            migrationBuilder.DropTable(
+                name: "OrderDetail");
 
             migrationBuilder.DropTable(
                 name: "Payments");
+
+            migrationBuilder.DropTable(
+                name: "RefreshTokens");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

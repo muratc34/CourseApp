@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20241224113837_initial")]
+    [Migration("20241228083019_initial")]
     partial class initial
     {
         /// <inheritdoc />
@@ -25,34 +25,39 @@ namespace Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("ApplicationUserCourse", b =>
+            modelBuilder.Entity("Domain.Authentication.RefreshToken", b =>
                 {
-                    b.Property<Guid>("CoursesEnrolledId")
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("EnrolledUsersId")
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("CreatedOnUtc")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("Deleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<long?>("DeletedOnUtc")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Expiration")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("ModifiedOnUtc")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
-                    b.HasKey("CoursesEnrolledId", "EnrolledUsersId");
+                    b.HasKey("Id");
 
-                    b.HasIndex("EnrolledUsersId");
-
-                    b.ToTable("ApplicationUserCourse");
-                });
-
-            modelBuilder.Entity("CourseOrder", b =>
-                {
-                    b.Property<Guid>("CoursesId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("OrdersId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("CoursesId", "OrdersId");
-
-                    b.HasIndex("OrdersId");
-
-                    b.ToTable("CourseOrder");
+                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("Domain.Entities.ApplicationRole", b =>
@@ -66,14 +71,6 @@ namespace Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<long>("CreatedOnUtc")
-                        .HasColumnType("bigint");
-
-                    b.Property<bool>("Deleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<long?>("DeletedOnUtc")
                         .HasColumnType("bigint");
 
                     b.Property<long?>("ModifiedOnUtc")
@@ -111,14 +108,6 @@ namespace Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<long>("CreatedOnUtc")
-                        .HasColumnType("bigint");
-
-                    b.Property<bool>("Deleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<long?>("DeletedOnUtc")
                         .HasColumnType("bigint");
 
                     b.Property<string>("Email")
@@ -272,11 +261,44 @@ namespace Infrastructure.Migrations
                     b.ToTable("Courses");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Enrollment", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("CreatedOnUtc")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("ModifiedOnUtc")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("UserId", "CourseId");
+
+                    b.HasIndex("CourseId");
+
+                    b.ToTable("Enrollment");
+                });
+
             modelBuilder.Entity("Domain.Entities.Order", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<long>("CreatedOnUtc")
                         .HasColumnType("bigint");
@@ -297,14 +319,37 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<string>("TcNo")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("ZipCode")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
                     b.HasIndex("UserId");
 
                     b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("Domain.Entities.OrderDetail", b =>
+                {
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("CourseId", "OrderId");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderDetail");
                 });
 
             modelBuilder.Entity("Domain.Entities.Payment", b =>
@@ -444,36 +489,6 @@ namespace Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("ApplicationUserCourse", b =>
-                {
-                    b.HasOne("Domain.Entities.Course", null)
-                        .WithMany()
-                        .HasForeignKey("CoursesEnrolledId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.ApplicationUser", null)
-                        .WithMany()
-                        .HasForeignKey("EnrolledUsersId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("CourseOrder", b =>
-                {
-                    b.HasOne("Domain.Entities.Course", null)
-                        .WithMany()
-                        .HasForeignKey("CoursesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.Order", null)
-                        .WithMany()
-                        .HasForeignKey("OrdersId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Domain.Entities.Course", b =>
                 {
                     b.HasOne("Domain.Entities.Category", "Category")
@@ -493,6 +508,25 @@ namespace Infrastructure.Migrations
                     b.Navigation("Instructor");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Enrollment", b =>
+                {
+                    b.HasOne("Domain.Entities.Course", "Course")
+                        .WithMany("Enrollments")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.ApplicationUser", "User")
+                        .WithMany("Enrollments")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Domain.Entities.Order", b =>
                 {
                     b.HasOne("Domain.Entities.ApplicationUser", "User")
@@ -502,6 +536,25 @@ namespace Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Domain.Entities.OrderDetail", b =>
+                {
+                    b.HasOne("Domain.Entities.Course", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.Order", "Order")
+                        .WithMany("OrderDetails")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("Order");
                 });
 
             modelBuilder.Entity("Domain.Entities.Payment", b =>
@@ -570,6 +623,8 @@ namespace Infrastructure.Migrations
                 {
                     b.Navigation("CoursesCreated");
 
+                    b.Navigation("Enrollments");
+
                     b.Navigation("Orders");
                 });
 
@@ -578,10 +633,16 @@ namespace Infrastructure.Migrations
                     b.Navigation("Courses");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Course", b =>
+                {
+                    b.Navigation("Enrollments");
+                });
+
             modelBuilder.Entity("Domain.Entities.Order", b =>
                 {
-                    b.Navigation("Payment")
-                        .IsRequired();
+                    b.Navigation("OrderDetails");
+
+                    b.Navigation("Payment");
                 });
 #pragma warning restore 612, 618
         }
