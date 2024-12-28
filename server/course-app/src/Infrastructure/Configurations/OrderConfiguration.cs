@@ -17,6 +17,23 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
             .IsRequired()
             .HasDefaultValue(false);
 
+        builder.HasQueryFilter(c => !c.Deleted);
+
+        builder.Property(o => o.TcNo)
+            .IsRequired();
+
+        builder.Property(o => o.City)
+            .IsRequired();
+
+        builder.Property(o => o.Country)
+            .IsRequired();
+
+        builder.Property(o => o.Address)
+            .IsRequired();
+
+        builder.Property(o => o.ZipCode)
+            .IsRequired();
+
         builder.Property(o => o.UserId)
             .IsRequired();
 

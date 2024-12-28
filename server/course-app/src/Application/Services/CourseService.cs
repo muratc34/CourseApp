@@ -15,31 +15,31 @@ public interface ICourseService
 public class CourseService : ICourseService
 {
     private readonly ICourseRepository _courseRepository;
-    private readonly ICategoryRepository _categoryRepository;
+    private readonly ICategoryService _categoryService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly UserManager<ApplicationUser> _userManager;
 
     public CourseService(
-        ICourseRepository courseRepository, 
-        ICategoryRepository categoryRepository, 
+        ICourseRepository courseRepository,
+        ICategoryService categoryService, 
         IUnitOfWork unitOfWork, 
         UserManager<ApplicationUser> userManager)
     {
         _courseRepository = courseRepository;
         _unitOfWork = unitOfWork;
-        _categoryRepository = categoryRepository;
+        _categoryService = categoryService;
         _userManager = userManager;
     }
 
     public async Task<Result<CourseDetailDto>> Create(CourseCreateDto courseCreateDto)
     {
-        var course = Course.Create(courseCreateDto.Name, courseCreateDto.Description, courseCreateDto.Price, courseCreateDto.ImageUrl, courseCreateDto.CategoryId, courseCreateDto.InstructorId);
-
-        var isCategoryExist = await _categoryRepository.GetAsync(x => x.Id == courseCreateDto.CategoryId);
-        if (isCategoryExist is null)
+        var category = await _categoryService.GetCategoryById(courseCreateDto.CategoryId);
+        if (category is null)
         {
             return Result.Failure<CourseDetailDto>(DomainErrors.Category.NotFound);
         }
+
+        var course = Course.Create(courseCreateDto.Name, courseCreateDto.Description, courseCreateDto.Price, courseCreateDto.ImageUrl, courseCreateDto.CategoryId, courseCreateDto.InstructorId);
 
         await _courseRepository.CreateAsync(course);
         await _unitOfWork.SaveChangesAsync();
@@ -60,8 +60,8 @@ public class CourseService : ICourseService
 
     public async Task<Result<List<CourseDto>>> GetCourseByCategoryId(Guid categoryId, CancellationToken cancellationToken)
     {
-        var isCategoryExist = await _categoryRepository.GetAsync(x => x.Id == categoryId);
-        if (isCategoryExist is null)
+        var category = await _categoryService.GetCategoryById(categoryId);
+        if (category is null)
         {
             return Result.Failure<List<CourseDto>>(DomainErrors.Category.NotFound);
         }
@@ -136,10 +136,10 @@ public class CourseService : ICourseService
         {
             return Result.Failure(DomainErrors.Course.NotFound);
         }
-        if(courseUpdateDto.CategoryId != null && courseUpdateDto.CategoryId != Guid.Empty)
+        if(courseUpdateDto.CategoryId != null)
         {
-            var isCategoryExist = await _categoryRepository.GetAsync(x => x.Id == courseUpdateDto.CategoryId);
-            if (isCategoryExist is null)
+            var category = await _categoryService.GetCategoryById((Guid)courseUpdateDto.CategoryId);
+            if (category is null)
             {
                 return Result.Failure(DomainErrors.Category.NotFound);
             }

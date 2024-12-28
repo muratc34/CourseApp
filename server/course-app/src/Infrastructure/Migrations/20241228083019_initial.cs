@@ -207,6 +207,11 @@ namespace Infrastructure.Migrations
                     ModifiedOnUtc = table.Column<long>(type: "bigint", nullable: true),
                     DeletedOnUtc = table.Column<long>(type: "bigint", nullable: true),
                     Deleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    TcNo = table.Column<string>(type: "text", nullable: false),
+                    City = table.Column<string>(type: "text", nullable: false),
+                    Country = table.Column<string>(type: "text", nullable: false),
+                    Address = table.Column<string>(type: "text", nullable: false),
+                    ZipCode = table.Column<string>(type: "text", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false)
                 },

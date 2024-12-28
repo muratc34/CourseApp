@@ -1,4 +1,5 @@
-﻿using Application.Services;
+﻿using Application.Abstractions.Iyzico;
+using Infrastructure.Iyzıco;
 using Infrastructure.Iyzıco.Settings;
 
 namespace Infrastructure;
@@ -47,6 +48,8 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<IJwtProvider, JwtProvider>();
+
+        services.AddTransient<IIyzicoService, IyzicoService>();
 
         services.AddAuthorization();
 

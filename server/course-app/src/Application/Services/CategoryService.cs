@@ -6,6 +6,7 @@ public interface ICategoryService
     Task<Result> Update(Guid categoryId, CategoryUpdateDto categoryUpdateDto);
     Task<Result> Delete(Guid categoryId);
     Task<Result<List<CategoryDto>>> GetCategories(CancellationToken cancellationToken);
+    Task<Result<CategoryDto>> GetCategoryById(Guid categoryId);
 }
 
 public class CategoryService : ICategoryService
@@ -61,4 +62,15 @@ public class CategoryService : ICategoryService
 
         return Result.Success();
     }
+
+    public async Task<Result<CategoryDto>> GetCategoryById(Guid categoryId)
+    {
+        var category = await _categoryRepository.GetAsync(x => x.Id == categoryId);
+        if (category is null)
+        {
+            return Result.Failure<CategoryDto>(DomainErrors.Category.NotFound);
+        }
+        return Result.Success(new CategoryDto(category.Id, category.CreatedOnUtc, category.Name));
+    }
+
 }

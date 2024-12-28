@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20241226223854_initial")]
-    partial class initial
+    [Migration("20241228102243_payment")]
+    partial class payment
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -288,6 +288,18 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<long>("CreatedOnUtc")
                         .HasColumnType("bigint");
 
@@ -307,8 +319,16 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<string>("TcNo")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("ZipCode")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -357,6 +377,10 @@ namespace Infrastructure.Migrations
 
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("PaymentReference")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

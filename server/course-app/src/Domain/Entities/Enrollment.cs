@@ -11,10 +11,10 @@ public class Enrollment : IAuditableEntity
         CourseId = courseId;
     }
     public Guid UserId { get; set; }
-    public ApplicationUser User { get; set; }
+    public virtual ApplicationUser? User { get; set; }
 
     public Guid CourseId { get; set; }
-    public Course Course { get; set; }
+    public virtual Course? Course { get; set; }
 
     public long CreatedOnUtc { get; }
     public long? ModifiedOnUtc { get; }

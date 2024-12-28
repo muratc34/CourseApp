@@ -1,4 +1,6 @@
-﻿using Application.Services;
+﻿using API.Extensions;
+using Application.DTOs;
+using Application.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -15,9 +17,17 @@ public class PaymentsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> Create(PaymentCreateDto paymentCreateDto)
     {
-        //var checkout = await _paymentService.Create();
-        return Ok();
+        var result = await _paymentService.Create(paymentCreateDto);
+        return result.IsSuccess ? Ok(result) : result.ToProblemDetails();
+    }
+
+    [HttpPost]
+    [Route("Callback")]
+    public async Task<IActionResult> PaymentCallback([FromForm] IFormCollection collection)
+    {
+        await _paymentService.Callback(collection["token"]);
+        return Ok(collection);
     }
 }
