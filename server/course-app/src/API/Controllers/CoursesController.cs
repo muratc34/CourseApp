@@ -1,6 +1,7 @@
 ﻿using API.Extensions;
 using Application.DTOs;
 using Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -17,14 +18,16 @@ public class CoursesController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "admin, instructor")]
     public async Task<IActionResult> Create(CourseCreateDto courseCreateDto)
     {
         var result = await _courseService.Create(courseCreateDto);
-        return result.IsSuccess ? Created(nameof(result.Data.Id), result) : result.ToProblemDetails();
+        return result.IsSuccess ? CreatedAtAction(nameof(GetById), new { courseId = result.Data.Id}, result.Data) : result.ToProblemDetails();
     }
 
     [HttpPut]
     [Route("{courseId}")]
+    [Authorize(Roles = "admin, instructor")]
     public async Task<IActionResult> Update(Guid courseId, CourseUpdateDto courseUpdateDto)
     {
         var result = await _courseService.Update(courseId, courseUpdateDto);
@@ -33,6 +36,7 @@ public class CoursesController : ControllerBase
 
     [HttpDelete]
     [Route("{courseId}")]
+    [Authorize(Roles = "admin, instructor")]
     public async Task<IActionResult> Delete(Guid courseId)
     {
         var result = await _courseService.Delete(courseId);
@@ -59,13 +63,5 @@ public class CoursesController : ControllerBase
     {
         var result = await _courseService.GetCourseByCategoryId(categoryId, cancellationToken);
         return result.IsSuccess ? Ok(result) : result.ToProblemDetails();
-    }
-
-    [HttpPost]
-    [Route("{courseId}/User/{userId}")]
-    public async Task<IActionResult> AddUserToCourse(Guid courseId, Guid userId)
-    {
-        var result = await _courseService.RegisterUserToCourse(courseId, userId);
-        return result.IsSuccess ? NoContent() : result.ToProblemDetails();
     }
 }

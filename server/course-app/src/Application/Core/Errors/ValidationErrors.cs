@@ -81,6 +81,10 @@ internal static class ValidationErrors
         internal static Error UserNameIsRequired => Error.Failure("UserUpdateDto.UserNameIsRequired", "The username is required.");
 
     }
+    internal static class RoleSaveDto
+    {
+        internal static Error NameIsRequired => Error.Failure("RoleSaveDto.NameIsRequired", "The name is required.");
+    }
 }
 
 

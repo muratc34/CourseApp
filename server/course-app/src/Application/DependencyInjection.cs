@@ -14,6 +14,7 @@ public static class DependencyInjection
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IRoleService, RoleService>();
 
         services.AddScoped<IValidator<CategorySaveDto>, CategorySaveDtoValidator>();
         services.AddScoped<IValidator<ChangePasswordDto>, ChangePasswordDtoValidator>();
@@ -24,6 +25,7 @@ public static class DependencyInjection
         services.AddScoped<IValidator<PaymentCreateDto>, PaymentCreateDtoValidator>();
         services.AddScoped<IValidator<UserCreateDto>, UserCreateDtoValidator>();
         services.AddScoped<IValidator<UserUpdateDto>, UserUpdateDtoValidator>();
+        services.AddScoped<IValidator<RoleSaveDto>, RoleSaveDtoValidator>();
 
 
         return services;

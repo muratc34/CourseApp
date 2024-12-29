@@ -1,7 +1,10 @@
-﻿using Application.Abstractions.Emails;
+﻿using Application.Abstractions.Caching;
+using Application.Abstractions.Emails;
 using Application.Abstractions.Iyzico;
 using Application.Abstractions.Messaging;
 using Application.Abstractions.Notifications;
+using Infrastructure.Caching;
+using Infrastructure.Caching.Settings;
 using Infrastructure.Emails;
 using Infrastructure.Emails.Settings;
 using Infrastructure.Iyzıco;
@@ -11,6 +14,7 @@ using Infrastructure.Messaging.Consumers;
 using Infrastructure.Messaging.Settings;
 using Infrastructure.Notifications;
 using MassTransit;
+using StackExchange.Redis;
 
 namespace Infrastructure;
 
@@ -22,6 +26,7 @@ public static class DependencyInjection
         services.Configure<IyzicoSettings>(configuration.GetSection(IyzicoSettings.SettingsKey));
         services.Configure<MailSettings>(configuration.GetSection(MailSettings.SettingsKey));
         services.Configure<MessageBrokerSettings>(configuration.GetSection(MessageBrokerSettings.SettingsKey));
+        services.Configure<RedisSettings>(configuration.GetSection(RedisSettings.SettingsKey));
 
         services.AddDbContext<DatabaseContext>(options =>
         {
@@ -70,6 +75,7 @@ public static class DependencyInjection
 
         });
 
+
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<ICourseRepository, CourseRepository>();
@@ -79,11 +85,14 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<IJwtProvider, JwtProvider>();
+        services.AddScoped<ICacheService, CacheService>();
 
         services.AddTransient<IIyzicoService, IyzicoService>(); 
         services.AddTransient<IEmailService, EmailService>();
         services.AddTransient<IEmailNotificationService, EmailNotificationService>();
         services.AddTransient<IEventPublisher, RabbitMQEventPublisher>();
+
+        services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(configuration["Redis:Host"]));
 
         services.AddAuthorization();
         return services;

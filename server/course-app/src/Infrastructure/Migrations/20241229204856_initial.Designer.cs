@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20241228102243_payment")]
-    partial class payment
+    [Migration("20241229204856_initial")]
+    partial class initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -46,8 +46,8 @@ namespace Infrastructure.Migrations
                     b.Property<long?>("DeletedOnUtc")
                         .HasColumnType("bigint");
 
-                    b.Property<long>("Expiration")
-                        .HasColumnType("bigint");
+                    b.Property<DateTime>("Expiration")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<long?>("ModifiedOnUtc")
                         .HasColumnType("bigint");

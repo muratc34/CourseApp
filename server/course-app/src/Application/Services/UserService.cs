@@ -1,10 +1,6 @@
-﻿using Application.Abstractions.Authentication;
-using Application.Abstractions.Messaging;
-using Application.Abstractions.UnitOfWorks;
-using Application.FluentValidations;
+﻿using Application.Abstractions.Messaging;
 using Domain.Events;
 using FluentValidation;
-using System;
 
 namespace Application.Services;
 
@@ -14,11 +10,14 @@ public interface IUserService
     Task<Result<UserDto>> GetUserByIdAsync(Guid userId);
     Task<Result> UpdateAsync(Guid userId, UserUpdateDto userUpdateDto);
     Task<Result> DeleteAsync(Guid userId);
+    Task<Result> AddRoleToUser(Guid userId, Guid roleId);
+    Task<Result> RemoveRoleFromUser(Guid userId, Guid roleId);
 }
 
 public class UserService : IUserService
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly IValidator<UserCreateDto> _userCreateDtoValidator;
     private readonly IValidator<UserUpdateDto> _userUpdateDtoValidator;
     private readonly IEventPublisher _eventPublisher;
@@ -27,7 +26,8 @@ public class UserService : IUserService
     private readonly IUnitOfWork _unitOfWork;
 
     public UserService(
-        UserManager<ApplicationUser> userManager, 
+        UserManager<ApplicationUser> userManager,
+        RoleManager<ApplicationRole> roleManager, 
         IValidator<UserCreateDto> userCreateDtoValidator, 
         IValidator<UserUpdateDto> userUpdateDtoValidator,
         IEventPublisher eventPublisher,
@@ -36,6 +36,7 @@ public class UserService : IUserService
         IUnitOfWork unitOfWork)
     {
         _userManager = userManager;
+        _roleManager = roleManager;
         _userCreateDtoValidator = userCreateDtoValidator;
         _userUpdateDtoValidator = userUpdateDtoValidator;
         _eventPublisher = eventPublisher;
@@ -91,7 +92,6 @@ public class UserService : IUserService
         {
             return Result.Failure<UserDto>(DomainErrors.User.NotFound(userId));
         }
-
         return Result.Success(new UserDto(user.Id, user.CreatedOnUtc, user.FullName, user.Email, user.UserName, user.ProfilePictureUrl));
     }
 
@@ -132,6 +132,52 @@ public class UserService : IUserService
         {
             var errors = result.Errors
                 .Select(x => DomainErrors.User.CannotDelete(x.Description))
+                .ToList();
+            return Result.Failure(errors);
+        }
+        return Result.Success();
+    }
+
+    public async Task<Result> AddRoleToUser(Guid userId, Guid roleId)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+        {
+            return Result.Failure(DomainErrors.User.NotFound(userId));
+        }
+        var role = await _roleManager.FindByIdAsync(roleId.ToString());
+        if (role is null)
+        {
+            return Result.Failure(DomainErrors.User.NotFound(roleId));
+        }
+        var result = await _userManager.AddToRoleAsync(user, role.Name);
+        if (!result.Succeeded)
+        {
+            var errors = result.Errors
+                .Select(x => DomainErrors.User.CannotCreate(x.Description))
+                .ToList();
+            return Result.Failure(errors);
+        }
+        return Result.Success();
+    }
+
+    public async Task<Result> RemoveRoleFromUser(Guid userId, Guid roleId)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+        {
+            return Result.Failure(DomainErrors.User.NotFound(userId));
+        }
+        var role = await _roleManager.FindByIdAsync(roleId.ToString());
+        if (role is null)
+        {
+            return Result.Failure(DomainErrors.User.NotFound(roleId));
+        }
+        var result = await _userManager.RemoveFromRoleAsync(user, role.Name);
+        if (!result.Succeeded)
+        {
+            var errors = result.Errors
+                .Select(x => DomainErrors.User.CannotCreate(x.Description))
                 .ToList();
             return Result.Failure(errors);
         }

@@ -85,7 +85,7 @@ namespace Infrastructure.Migrations
                     Deleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     Code = table.Column<string>(type: "text", nullable: false),
-                    Expiration = table.Column<long>(type: "bigint", nullable: false)
+                    Expiration = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -269,6 +269,7 @@ namespace Infrastructure.Migrations
                     DeletedOnUtc = table.Column<long>(type: "bigint", nullable: true),
                     Deleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     OrderId = table.Column<Guid>(type: "uuid", nullable: false),
+                    PaymentReference = table.Column<string>(type: "text", nullable: false),
                     Amount = table.Column<decimal>(type: "numeric", nullable: false)
                 },
                 constraints: table =>

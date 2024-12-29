@@ -57,4 +57,9 @@ public class ApplicationUser : IdentityUser<Guid>, IAuditableEntity
         }
         return this;
     }
+
+    public void EmailVerify()
+    {
+        EmailConfirmed = true;
+    }
 }

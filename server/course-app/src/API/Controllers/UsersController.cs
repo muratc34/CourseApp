@@ -1,6 +1,7 @@
 ﻿using API.Extensions;
 using Application.DTOs;
 using Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -34,7 +35,8 @@ public class UsersController : ControllerBase
 
     [HttpPut]
     [Route("{userId}")]
-    public async Task<IActionResult> UpdateUser([FromQuery]Guid userId, UserUpdateDto userUpdateDto)
+    [Authorize("user")]
+    public async Task<IActionResult> UpdateUser(Guid userId, UserUpdateDto userUpdateDto)
     {
         var result = await _userService.UpdateAsync(userId, userUpdateDto);
         return result.IsSuccess ? NoContent() : result.ToProblemDetails();
@@ -42,9 +44,27 @@ public class UsersController : ControllerBase
 
     [HttpDelete]
     [Route("{userId}")]
+    [Authorize("admin,user")]
     public async Task<IActionResult> DeleteUser(Guid userId)
     {
         var result = await _userService.DeleteAsync(userId);
+        return result.IsSuccess ? NoContent() : result.ToProblemDetails();
+    }
+
+    [HttpPut]
+    [Route("{userId}/role/{roleId}")]
+    public async Task<IActionResult> AddRoleToUser(Guid userId, Guid roleId)
+    {
+        var result = await _userService.AddRoleToUser(userId, roleId);
+        return result.IsSuccess ? NoContent() : result.ToProblemDetails(); 
+    }
+
+    [HttpDelete]
+    [Route("{userId}/role/{roleId}")]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> RemoveRoleFromUser(Guid userId, Guid roleId)
+    {
+        var result = await _userService.RemoveRoleFromUser(userId, roleId);
         return result.IsSuccess ? NoContent() : result.ToProblemDetails();
     }
 }

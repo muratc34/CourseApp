@@ -1,4 +1,8 @@
-﻿using Domain.Core.Results;
+﻿using Application.Abstractions.Caching;
+using Application.Abstractions.Caching.Constants;
+using Application.Abstractions.Messaging;
+using Domain.Core.Results;
+using Domain.Events;
 using FluentValidation;
 
 namespace Application.Services;
@@ -9,24 +13,32 @@ public interface IAuthenticationService
     Task<Result> ChangePassword(Guid userId, ChangePasswordDto changePasswordDto);
     Task<Result<AccessToken>> CreateTokenByRefreshToken(string refreshToken);
     Task<Result> ExterminateRefreshToken(string refreshToken);
+    Task<Result> EmailConfirmation(Guid userId, string token);
+    Task<Result> ResendEmailConfirmationToken(Guid userId);
 }
 
 public class AuthenticationService : IAuthenticationService
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly IJwtProvider _jwtProvider;
     private readonly IRepository<RefreshToken> _refreshTokenRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IValidator<LoginDto> _loginDtoValidator;
     private readonly IValidator<ChangePasswordDto> _changePasswordDtoValidator;
+    private readonly ICacheService _cacheService;
+    private readonly IEventPublisher _eventPublisher;
 
     public AuthenticationService(
-        UserManager<ApplicationUser> userManager, 
+        UserManager<ApplicationUser> userManager,
+        RoleManager<ApplicationRole> roleManager,
         IJwtProvider jwtProvider, 
         IRepository<RefreshToken> refreshTokenRepository,
         IUnitOfWork unitOfWork,
         IValidator<LoginDto> loginDtoValidator,
-        IValidator<ChangePasswordDto> changePasswordDtoValidator)
+        IValidator<ChangePasswordDto> changePasswordDtoValidator,
+        ICacheService cacheService,
+        IEventPublisher eventPublisher)
     {
         _userManager = userManager;
         _jwtProvider = jwtProvider;
@@ -34,6 +46,8 @@ public class AuthenticationService : IAuthenticationService
         _unitOfWork = unitOfWork;
         _loginDtoValidator = loginDtoValidator;
         _changePasswordDtoValidator = changePasswordDtoValidator;
+        _cacheService = cacheService;
+        _eventPublisher = eventPublisher;
     }
 
     public async Task<Result<AccessToken>> LoginAsync(LoginDto loginDto)
@@ -105,7 +119,7 @@ public class AuthenticationService : IAuthenticationService
         {
             return Result.Failure<AccessToken>(DomainErrors.RefreshToken.NotFound);
         }
-        if (existRefreshToken.Expiration < DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+        if (existRefreshToken.Expiration < DateTime.UtcNow)
         {
             return Result.Failure<AccessToken>(DomainErrors.RefreshToken.TokenExpired);
         }
@@ -132,6 +146,65 @@ public class AuthenticationService : IAuthenticationService
 
         _refreshTokenRepository.Delete(existRefreshToken);
         await _unitOfWork.SaveChangesAsync();
+        return Result.Success();
+    }
+
+    public async Task<Result> EmailConfirmation(Guid userId, string token)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if(user is null)
+        {
+            return Result.Failure(DomainErrors.User.NotFound(userId));
+        }
+        var verificationToken = await _cacheService.GetAsync<string>(CachingKeys.EmailVerificationKey(userId));
+        if (verificationToken is null || !verificationToken.Equals(token))
+        {
+            return Result.Failure(DomainErrors.User.EmailConfirmationOTPInvalid);
+        }
+        user.EmailVerify();
+
+        const string defaultRole = "user";
+        var roleExists = await _roleManager.RoleExistsAsync(defaultRole);
+        if (!roleExists)
+        {
+            var roleCreateResult = await _roleManager.CreateAsync(ApplicationRole.Create(defaultRole));
+            if (!roleCreateResult.Succeeded)
+            {
+                var errors = roleCreateResult.Errors
+                    .Select(x => DomainErrors.User.CannotCreate(x.Description))
+                    .ToList();
+                return Result.Failure(errors);
+            }
+        }
+
+        var roleAssignResult = await _userManager.AddToRoleAsync(user, defaultRole);
+        if (!roleAssignResult.Succeeded)
+        {
+            if (!roleAssignResult.Succeeded)
+            {
+                var errors = roleAssignResult.Errors
+                    .Select(x => DomainErrors.User.CannotCreate(x.Description))
+                    .ToList();
+                return Result.Failure(errors);
+            }
+        }
+
+        await _unitOfWork.SaveChangesAsync();
+        await _cacheService.RemoveAsync(CachingKeys.EmailVerificationKey(userId));
+        return Result.Success();
+    }
+    public async Task<Result> ResendEmailConfirmationToken(Guid userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+        {
+            return Result.Failure(DomainErrors.User.NotFound(userId));
+        }
+
+        var emailVerificationToken = new Random().Next(100000, 1000000);
+        var userRegisteredEvent = new UserRegisteredEvent(user.Id, user.Email, user.FullName, emailVerificationToken);
+        await _eventPublisher.PublishAsync(userRegisteredEvent);
+
         return Result.Success();
     }
 }
