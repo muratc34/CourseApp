@@ -55,4 +55,12 @@ public class AuthenticationController : ControllerBase
         var result = await _authenticationService.EmailConfirmation(userId, token);
         return result.IsSuccess ? NoContent() : result.ToProblemDetails();
     }
+
+    [HttpPost]
+    [Route("ResendEmailConfirmationToken")]
+    public async Task<IActionResult> ResendEmailConfirmationToken(Guid userId)
+    {
+        var result = await _authenticationService.ResendEmailConfirmationToken(userId);
+        return result.IsSuccess ? NoContent() : result.ToProblemDetails();
+    }
 }

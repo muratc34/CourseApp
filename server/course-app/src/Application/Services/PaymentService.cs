@@ -13,9 +13,10 @@ internal class PaymentService : IPaymentService
     private readonly IPaymentRepository _paymentRepository;
     private readonly IOrderService _orderService;
     private readonly IIyzicoService _iyzicoService;
-    UserManager<ApplicationUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IValidator<PaymentCreateDto> _paymentCreateDtoValidator;
+    private readonly ICourseService _courseService;
 
     public PaymentService(
         IPaymentRepository paymentRepository, 
@@ -23,7 +24,8 @@ internal class PaymentService : IPaymentService
         IOrderService orderService,
         UserManager<ApplicationUser> userManager,
         IUnitOfWork unitOfWork,
-        IValidator<PaymentCreateDto> paymentCreateDtoValidator)
+        IValidator<PaymentCreateDto> paymentCreateDtoValidator,
+        ICourseService courseService)
     {
         _paymentRepository = paymentRepository;
         _iyzicoService = iyzicoService;
@@ -31,6 +33,7 @@ internal class PaymentService : IPaymentService
         _userManager = userManager;
         _unitOfWork = unitOfWork;
         _paymentCreateDtoValidator = paymentCreateDtoValidator;
+        _courseService = courseService;
     }
 
     public async Task<Result<PaymentDto>> Create(PaymentCreateDto paymentCreateDto)
@@ -86,6 +89,11 @@ internal class PaymentService : IPaymentService
             return Result.Failure(DomainErrors.Order.NotFound);
         }
         await _orderService.UpdateStatusAsCompleted(order.Data.Id);
+
+        foreach (var course in order.Data.Courses)
+        {
+            await _courseService.RegisterUserToCourse(course.Id, order.Data.UserId);
+        }
 
         var payment = Payment.Create(new Guid(confirm.BasketId), confirm.PaymentReference, Convert.ToDecimal(confirm.PaidPrice));
         await _paymentRepository.CreateAsync(payment);

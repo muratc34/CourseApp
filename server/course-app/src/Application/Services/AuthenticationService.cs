@@ -1,5 +1,7 @@
 ﻿using Application.Abstractions.Caching;
 using Application.Abstractions.Caching.Constants;
+using Application.Abstractions.Messaging;
+using Domain.Events;
 using FluentValidation;
 
 namespace Application.Services;
@@ -11,6 +13,7 @@ public interface IAuthenticationService
     Task<Result<AccessToken>> CreateTokenByRefreshToken(string refreshToken);
     Task<Result> ExterminateRefreshToken(string refreshToken);
     Task<Result> EmailConfirmation(Guid userId, string token);
+    Task<Result> ResendEmailConfirmationToken(Guid userId);
 }
 
 public class AuthenticationService : IAuthenticationService
@@ -22,6 +25,7 @@ public class AuthenticationService : IAuthenticationService
     private readonly IValidator<LoginDto> _loginDtoValidator;
     private readonly IValidator<ChangePasswordDto> _changePasswordDtoValidator;
     private readonly ICacheService _cacheService;
+    private readonly IEventPublisher _eventPublisher;
 
     public AuthenticationService(
         UserManager<ApplicationUser> userManager, 
@@ -30,7 +34,8 @@ public class AuthenticationService : IAuthenticationService
         IUnitOfWork unitOfWork,
         IValidator<LoginDto> loginDtoValidator,
         IValidator<ChangePasswordDto> changePasswordDtoValidator,
-        ICacheService cacheService)
+        ICacheService cacheService,
+        IEventPublisher eventPublisher)
     {
         _userManager = userManager;
         _jwtProvider = jwtProvider;
@@ -39,6 +44,7 @@ public class AuthenticationService : IAuthenticationService
         _loginDtoValidator = loginDtoValidator;
         _changePasswordDtoValidator = changePasswordDtoValidator;
         _cacheService = cacheService;
+        _eventPublisher = eventPublisher;
     }
 
     public async Task<Result<AccessToken>> LoginAsync(LoginDto loginDto)
@@ -153,6 +159,20 @@ public class AuthenticationService : IAuthenticationService
             return Result.Failure();
         }
         user.EmailVerify();
+
+        return Result.Success();
+    }
+    public async Task<Result> ResendEmailConfirmationToken(Guid userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+        {
+            return Result.Failure(DomainErrors.User.NotFound(userId));
+        }
+
+        var emailVerificationToken = new Random().Next(100000, 1000000);
+        var userRegisteredEvent = new UserRegisteredEvent(user.Id, user.Email, user.FullName, emailVerificationToken);
+        await _eventPublisher.PublishAsync(userRegisteredEvent);
 
         return Result.Success();
     }
