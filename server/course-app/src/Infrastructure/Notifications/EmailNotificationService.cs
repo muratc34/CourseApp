@@ -10,18 +10,6 @@ internal class EmailNotificationService : IEmailNotificationService
 
     public EmailNotificationService(IEmailService emailService) => _emailService = emailService;
 
-    public async Task SendWelcomeEmail(WelcomeEmail welcomeEmail)
-    {
-        var mailRequest = new MailRequest(
-               welcomeEmail.EmailTo,
-               "Welcome to Inveon Course App! 🎉",
-               $"Welcome to Inveon Course App {welcomeEmail.Name}," +
-               Environment.NewLine +
-               $"You have registered with the email {welcomeEmail.EmailTo}.");
-
-        await _emailService.SendEmailAsync(mailRequest);
-    }
-
     public async Task SendEmailVerification(EmailVerification emailVerification)
     {
         var mailRequest = new MailRequest(

@@ -1,4 +1,6 @@
-﻿using Application.Abstractions.Notifications;
+﻿using Application.Abstractions.Caching;
+using Application.Abstractions.Caching.Constants;
+using Application.Abstractions.Notifications;
 using Application.Abstractions.Notifications.Contracts;
 using Domain.Events;
 using MassTransit;
@@ -8,17 +10,18 @@ namespace Infrastructure.Messaging.Consumers;
 public class UserCreatedEventConsumer : IConsumer<UserRegisteredEvent>
 {
     private readonly IEmailNotificationService _emailNotificationService;
+    private readonly ICacheService _cacheService;
 
-    public UserCreatedEventConsumer(IEmailNotificationService emailNotificationService)
+    public UserCreatedEventConsumer(IEmailNotificationService emailNotificationService, ICacheService cacheService)
     {
         _emailNotificationService = emailNotificationService;
+        _cacheService = cacheService;
     }
 
     public async Task Consume(ConsumeContext<UserRegisteredEvent> context)
     {
-        await _emailNotificationService.SendWelcomeEmail(new WelcomeEmail(context.Message.Email, context.Message.FullName));
         await _emailNotificationService.SendEmailVerification(new EmailVerification(context.Message.Email, context.Message.FullName, context.Message.Token.ToString()));
 
-
+        await _cacheService.SetAsync(CachingKey.EmailVerificationKey(context.Message.UserId), context.Message.Token.ToString(), TimeSpan.FromMinutes(5));
     }
 }

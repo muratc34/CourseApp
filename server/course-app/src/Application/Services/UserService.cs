@@ -1,10 +1,6 @@
-﻿using Application.Abstractions.Authentication;
-using Application.Abstractions.Messaging;
-using Application.Abstractions.UnitOfWorks;
-using Application.FluentValidations;
+﻿using Application.Abstractions.Messaging;
 using Domain.Events;
 using FluentValidation;
-using System;
 
 namespace Application.Services;
 

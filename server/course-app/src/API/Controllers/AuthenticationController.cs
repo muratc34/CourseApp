@@ -47,4 +47,12 @@ public class AuthenticationController : ControllerBase
         var result = await _authenticationService.ExterminateRefreshToken(refreshToken);
         return result.IsSuccess ? NoContent() : result.ToProblemDetails();
     }
+
+    [HttpPost]
+    [Route("ConfirmEmail")]
+    public async Task<IActionResult> ConfirmEmail(Guid userId, string token)
+    {
+        var result = await _authenticationService.EmailConfirmation(userId, token);
+        return result.IsSuccess ? NoContent() : result.ToProblemDetails();
+    }
 }

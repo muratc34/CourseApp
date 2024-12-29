@@ -1,4 +1,5 @@
-﻿using Domain.Core.Results;
+﻿using Application.Abstractions.Caching;
+using Application.Abstractions.Caching.Constants;
 using FluentValidation;
 
 namespace Application.Services;
@@ -9,6 +10,7 @@ public interface IAuthenticationService
     Task<Result> ChangePassword(Guid userId, ChangePasswordDto changePasswordDto);
     Task<Result<AccessToken>> CreateTokenByRefreshToken(string refreshToken);
     Task<Result> ExterminateRefreshToken(string refreshToken);
+    Task<Result> EmailConfirmation(Guid userId, string token);
 }
 
 public class AuthenticationService : IAuthenticationService
@@ -19,6 +21,7 @@ public class AuthenticationService : IAuthenticationService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IValidator<LoginDto> _loginDtoValidator;
     private readonly IValidator<ChangePasswordDto> _changePasswordDtoValidator;
+    private readonly ICacheService _cacheService;
 
     public AuthenticationService(
         UserManager<ApplicationUser> userManager, 
@@ -26,7 +29,8 @@ public class AuthenticationService : IAuthenticationService
         IRepository<RefreshToken> refreshTokenRepository,
         IUnitOfWork unitOfWork,
         IValidator<LoginDto> loginDtoValidator,
-        IValidator<ChangePasswordDto> changePasswordDtoValidator)
+        IValidator<ChangePasswordDto> changePasswordDtoValidator,
+        ICacheService cacheService)
     {
         _userManager = userManager;
         _jwtProvider = jwtProvider;
@@ -34,6 +38,7 @@ public class AuthenticationService : IAuthenticationService
         _unitOfWork = unitOfWork;
         _loginDtoValidator = loginDtoValidator;
         _changePasswordDtoValidator = changePasswordDtoValidator;
+        _cacheService = cacheService;
     }
 
     public async Task<Result<AccessToken>> LoginAsync(LoginDto loginDto)
@@ -132,6 +137,23 @@ public class AuthenticationService : IAuthenticationService
 
         _refreshTokenRepository.Delete(existRefreshToken);
         await _unitOfWork.SaveChangesAsync();
+        return Result.Success();
+    }
+
+    public async Task<Result> EmailConfirmation(Guid userId, string token)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if(user is null)
+        {
+            return Result.Failure(DomainErrors.User.NotFound(userId));
+        }
+        var verificationToken = await _cacheService.GetAsync<string>(CachingKey.EmailVerificationKey(userId));
+        if (verificationToken is null || !verificationToken.Equals(token))
+        {
+            return Result.Failure();
+        }
+        user.EmailVerify();
+
         return Result.Success();
     }
 }
