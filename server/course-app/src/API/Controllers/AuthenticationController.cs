@@ -1,6 +1,7 @@
 ﻿using API.Extensions;
 using Application.DTOs;
 using Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -26,6 +27,7 @@ public class AuthenticationController : ControllerBase
 
     [HttpPatch]
     [Route("ChangePassword/{userId}")]
+    [Authorize(Roles = "user")]
     public async Task<IActionResult> ChangePassword(Guid userId, ChangePasswordDto changePasswordDto)
     {
         var result = await _authenticationService.ChangePassword(userId, changePasswordDto);
@@ -50,6 +52,7 @@ public class AuthenticationController : ControllerBase
 
     [HttpPost]
     [Route("ConfirmEmail")]
+    [Authorize]
     public async Task<IActionResult> ConfirmEmail(Guid userId, string token)
     {
         var result = await _authenticationService.EmailConfirmation(userId, token);
@@ -58,6 +61,7 @@ public class AuthenticationController : ControllerBase
 
     [HttpPost]
     [Route("ResendEmailConfirmationToken")]
+    [Authorize]
     public async Task<IActionResult> ResendEmailConfirmationToken(Guid userId)
     {
         var result = await _authenticationService.ResendEmailConfirmationToken(userId);

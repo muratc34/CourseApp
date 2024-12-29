@@ -2,7 +2,7 @@
 
 public class RefreshToken : Entity, ISoftDeletableEntity, IAuditableEntity
 {
-    public RefreshToken(Guid userId, string code, long expiration) : base()
+    public RefreshToken(Guid userId, string code, DateTime expiration) : base()
     {
         Ensure.NotEmpty(userId, "The user id is requreid", nameof(userId));
         Ensure.NotEmpty(code, "The code is requreid", nameof(code));
@@ -19,14 +19,14 @@ public class RefreshToken : Entity, ISoftDeletableEntity, IAuditableEntity
 
     public Guid UserId { get; private set; }
     public string Code { get; private set; }
-    public long Expiration { get; private set; }
+    public DateTime Expiration { get; private set; }
 
-    public static RefreshToken Create(Guid userId, string code, long expiration) 
+    public static RefreshToken Create(Guid userId, string code, DateTime expiration) 
     {
         return new RefreshToken(userId, code, expiration);
     }
 
-    public void UpdateToken(string code, long expiration)
+    public void UpdateToken(string code, DateTime expiration)
     {
         Ensure.NotEmpty(code, "The code is requreid", nameof(code));
 

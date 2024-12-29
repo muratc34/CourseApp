@@ -1,6 +1,7 @@
 ﻿using API.Extensions;
 using Application.DTOs;
 using Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -17,6 +18,7 @@ public class PaymentsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize("user")]
     public async Task<IActionResult> Create(PaymentCreateDto paymentCreateDto)
     {
         var result = await _paymentService.Create(paymentCreateDto);
@@ -25,6 +27,7 @@ public class PaymentsController : ControllerBase
 
     [HttpPost]
     [Route("Callback")]
+    [Authorize("user")]
     public async Task<IActionResult> PaymentCallback([FromForm] IFormCollection collection)
     {
         await _paymentService.Callback(collection["token"]);

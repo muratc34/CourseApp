@@ -21,7 +21,7 @@ internal class EmailNotificationService : IEmailNotificationService
 
                 Your verification code: {emailVerification.Token}
 
-                If you did not sign up for an account on CodeVich, please ignore this email.
+                If you did not sign up for an account on Inveon Course App, please ignore this email.
 
                 For any questions, feel free to contact our support team at courseapp34@gmail.com.
 

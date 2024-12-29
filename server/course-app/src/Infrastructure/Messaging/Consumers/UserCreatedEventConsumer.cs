@@ -21,7 +21,6 @@ public class UserCreatedEventConsumer : IConsumer<UserRegisteredEvent>
     public async Task Consume(ConsumeContext<UserRegisteredEvent> context)
     {
         await _emailNotificationService.SendEmailVerification(new EmailVerification(context.Message.Email, context.Message.FullName, context.Message.Token.ToString()));
-
-        await _cacheService.SetAsync(CachingKey.EmailVerificationKey(context.Message.UserId), context.Message.Token.ToString(), TimeSpan.FromMinutes(5));
+        await _cacheService.SetAsync(CachingKeys.EmailVerificationKey(context.Message.UserId), context.Message.Token.ToString(), TimeSpan.FromMinutes(5));
     }
 }

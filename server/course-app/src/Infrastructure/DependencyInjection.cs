@@ -14,6 +14,7 @@ using Infrastructure.Messaging.Consumers;
 using Infrastructure.Messaging.Settings;
 using Infrastructure.Notifications;
 using MassTransit;
+using StackExchange.Redis;
 
 namespace Infrastructure;
 
@@ -35,7 +36,6 @@ public static class DependencyInjection
         services.AddIdentity<ApplicationUser, ApplicationRole>(opt =>
         {
             opt.User.RequireUniqueEmail = true;
-            opt.SignIn.RequireConfirmedEmail = true;
         }).AddEntityFrameworkStores<DatabaseContext>().AddDefaultTokenProviders();
 
         services.AddAuthentication(options =>
@@ -75,10 +75,6 @@ public static class DependencyInjection
 
         });
 
-        services.AddStackExchangeRedisCache(opt =>
-        {
-            opt.Configuration = configuration["Redis:Host"];
-        });
 
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<ICategoryRepository, CategoryRepository>();
@@ -96,7 +92,8 @@ public static class DependencyInjection
         services.AddTransient<IEmailNotificationService, EmailNotificationService>();
         services.AddTransient<IEventPublisher, RabbitMQEventPublisher>();
 
-        services.AddDistributedMemoryCache();
+        services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(configuration["Redis:Host"]));
+
         services.AddAuthorization();
         return services;
     }

@@ -1,6 +1,7 @@
 ﻿using Application.Abstractions.Caching;
 using Application.Abstractions.Caching.Constants;
 using Application.Abstractions.Messaging;
+using Domain.Core.Results;
 using Domain.Events;
 using FluentValidation;
 
@@ -19,6 +20,7 @@ public interface IAuthenticationService
 public class AuthenticationService : IAuthenticationService
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly IJwtProvider _jwtProvider;
     private readonly IRepository<RefreshToken> _refreshTokenRepository;
     private readonly IUnitOfWork _unitOfWork;
@@ -28,7 +30,8 @@ public class AuthenticationService : IAuthenticationService
     private readonly IEventPublisher _eventPublisher;
 
     public AuthenticationService(
-        UserManager<ApplicationUser> userManager, 
+        UserManager<ApplicationUser> userManager,
+        RoleManager<ApplicationRole> roleManager,
         IJwtProvider jwtProvider, 
         IRepository<RefreshToken> refreshTokenRepository,
         IUnitOfWork unitOfWork,
@@ -116,7 +119,7 @@ public class AuthenticationService : IAuthenticationService
         {
             return Result.Failure<AccessToken>(DomainErrors.RefreshToken.NotFound);
         }
-        if (existRefreshToken.Expiration < DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+        if (existRefreshToken.Expiration < DateTime.UtcNow)
         {
             return Result.Failure<AccessToken>(DomainErrors.RefreshToken.TokenExpired);
         }
@@ -153,13 +156,41 @@ public class AuthenticationService : IAuthenticationService
         {
             return Result.Failure(DomainErrors.User.NotFound(userId));
         }
-        var verificationToken = await _cacheService.GetAsync<string>(CachingKey.EmailVerificationKey(userId));
+        var verificationToken = await _cacheService.GetAsync<string>(CachingKeys.EmailVerificationKey(userId));
         if (verificationToken is null || !verificationToken.Equals(token))
         {
-            return Result.Failure();
+            return Result.Failure(DomainErrors.User.EmailConfirmationOTPInvalid);
         }
         user.EmailVerify();
 
+        const string defaultRole = "user";
+        var roleExists = await _roleManager.RoleExistsAsync(defaultRole);
+        if (!roleExists)
+        {
+            var roleCreateResult = await _roleManager.CreateAsync(ApplicationRole.Create(defaultRole));
+            if (!roleCreateResult.Succeeded)
+            {
+                var errors = roleCreateResult.Errors
+                    .Select(x => DomainErrors.User.CannotCreate(x.Description))
+                    .ToList();
+                return Result.Failure(errors);
+            }
+        }
+
+        var roleAssignResult = await _userManager.AddToRoleAsync(user, defaultRole);
+        if (!roleAssignResult.Succeeded)
+        {
+            if (!roleAssignResult.Succeeded)
+            {
+                var errors = roleAssignResult.Errors
+                    .Select(x => DomainErrors.User.CannotCreate(x.Description))
+                    .ToList();
+                return Result.Failure(errors);
+            }
+        }
+
+        await _unitOfWork.SaveChangesAsync();
+        await _cacheService.RemoveAsync(CachingKeys.EmailVerificationKey(userId));
         return Result.Success();
     }
     public async Task<Result> ResendEmailConfirmationToken(Guid userId)

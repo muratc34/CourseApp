@@ -43,8 +43,8 @@ namespace Infrastructure.Migrations
                     b.Property<long?>("DeletedOnUtc")
                         .HasColumnType("bigint");
 
-                    b.Property<long>("Expiration")
-                        .HasColumnType("bigint");
+                    b.Property<DateTime>("Expiration")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<long?>("ModifiedOnUtc")
                         .HasColumnType("bigint");

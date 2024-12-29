@@ -1,4 +1,5 @@
-﻿using Application.FluentValidations;
+﻿using Application.Abstractions.Caching;
+using Application.Abstractions.Caching.Constants;
 using FluentValidation;
 
 namespace Application.Services;
@@ -23,6 +24,7 @@ public class CourseService : ICourseService
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IValidator<CourseCreateDto> _courseCreateDtoValidator;
     private readonly IValidator<CourseUpdateDto> _courseUpdateDtoValidator;
+    private readonly ICacheService _cacheService;
 
     public CourseService(
         ICourseRepository courseRepository,
@@ -30,7 +32,8 @@ public class CourseService : ICourseService
         IUnitOfWork unitOfWork, 
         UserManager<ApplicationUser> userManager,
         IValidator<CourseCreateDto> courseCreateDtoValidator,
-        IValidator<CourseUpdateDto> courseUpdateDtoValidator)
+        IValidator<CourseUpdateDto> courseUpdateDtoValidator,
+        ICacheService cacheService)
     {
         _courseRepository = courseRepository;
         _unitOfWork = unitOfWork;
@@ -38,6 +41,7 @@ public class CourseService : ICourseService
         _userManager = userManager;
         _courseCreateDtoValidator = courseCreateDtoValidator;
         _courseUpdateDtoValidator = courseUpdateDtoValidator;
+        _cacheService = cacheService;
     }
 
     public async Task<Result<CourseDto>> Create(CourseCreateDto courseCreateDto)
@@ -59,6 +63,10 @@ public class CourseService : ICourseService
 
         await _courseRepository.CreateAsync(course);
         await _unitOfWork.SaveChangesAsync();
+
+        await _cacheService.RemoveAsync(CachingKeys.CoursesKey);
+        await _cacheService.RemoveAsync(CachingKeys.CoursesByCagetoryIdKey(course.CategoryId));
+
         return Result.Success(new CourseDto(course.Id, course.CreatedOnUtc, course.ModifiedOnUtc, course.Name, course.Description, course.Price, course.ImageUrl, course.CategoryId, course.InstructorId));
     }
 
@@ -71,11 +79,21 @@ public class CourseService : ICourseService
         }
         _courseRepository.Delete(course);
         await _unitOfWork.SaveChangesAsync();
+
+        await _cacheService.RemoveAsync(CachingKeys.CoursesKey);
+        await _cacheService.RemoveAsync(CachingKeys.CourseByIdKey(course.Id));
+        await _cacheService.RemoveAsync(CachingKeys.CoursesByCagetoryIdKey(course.CategoryId));
         return Result.Success();
     }
 
     public async Task<Result<List<CourseDetailDto>>> GetCourseByCategoryId(Guid categoryId, CancellationToken cancellationToken)
     {
+        var cachedCourses = await _cacheService.GetAsync<List<CourseDetailDto>>(CachingKeys.CoursesByCagetoryIdKey(categoryId));
+        if (cachedCourses is not null)
+        {
+            return Result.Success(cachedCourses);
+        }
+
         var category = await _categoryService.GetCategoryById(categoryId);
         if (category is null)
         {
@@ -107,16 +125,24 @@ public class CourseService : ICourseService
             )
             ).ToListAsync(cancellationToken);
 
+        await _cacheService.SetAsync(CachingKeys.CoursesByCagetoryIdKey(categoryId), courses, TimeSpan.FromMinutes(60));
         return Result.Success(courses);
     }
 
     public async Task<Result<CourseDetailDto>> GetCourseById(Guid courseId)
     {
+        var cachedCourse = await _cacheService.GetAsync<CourseDetailDto>(CachingKeys.CourseByIdKey(courseId));
+        if (cachedCourse is not null)
+        {
+            return Result.Success(cachedCourse);
+        }
+
         var course = await _courseRepository.GetAsync(x => x.Id == courseId);
         if (course is null)
         {
             return Result.Failure<CourseDetailDto>(DomainErrors.Course.NotFound);
         }
+        await _cacheService.SetAsync(CachingKeys.CourseByIdKey(courseId), course, TimeSpan.FromMinutes(60));
         return Result.Success(
             new CourseDetailDto(
                 course.Id,
@@ -140,10 +166,17 @@ public class CourseService : ICourseService
                     course.Instructor.ProfilePictureUrl)
             )
         );
+
     }
 
     public async Task<Result<List<CourseDto>>> GetCourses(CancellationToken cancellationToken)
     {
+        var cachedCourses = await _cacheService.GetAsync<List<CourseDto>>(CachingKeys.CoursesKey);
+        if(cachedCourses is not null)
+        {
+            return Result.Success(cachedCourses);
+        }
+
         var courses = await _courseRepository.FindAll()
             .Select(x => new CourseDto(
                 x.Id,
@@ -157,6 +190,7 @@ public class CourseService : ICourseService
                 x.InstructorId)
             ).ToListAsync(cancellationToken);
 
+        await _cacheService.SetAsync(CachingKeys.CoursesKey, courses, TimeSpan.FromMinutes(60));
         return Result.Success(courses);
     }
 
@@ -185,7 +219,10 @@ public class CourseService : ICourseService
         course.Update(courseUpdateDto.Name, courseUpdateDto.Description, courseUpdateDto.Price, courseUpdateDto.ImageUrl, courseUpdateDto.CategoryId);
         _courseRepository.Update(course);
         await _unitOfWork.SaveChangesAsync();
-
+       
+        await _cacheService.RemoveAsync(CachingKeys.CoursesKey);
+        await _cacheService.RemoveAsync(CachingKeys.CourseByIdKey(course.Id));
+        await _cacheService.RemoveAsync(CachingKeys.CoursesByCagetoryIdKey(course.CategoryId));
         return Result.Success();
     }
 
@@ -205,6 +242,10 @@ public class CourseService : ICourseService
         course.AddUserToCourse(new Enrollment(userId, courseId));
         _courseRepository.Update(course);
         await _unitOfWork.SaveChangesAsync();
+       
+        await _cacheService.RemoveAsync(CachingKeys.CoursesKey);
+        await _cacheService.RemoveAsync(CachingKeys.CourseByIdKey(course.Id));
+        await _cacheService.RemoveAsync(CachingKeys.CoursesByCagetoryIdKey(course.CategoryId));
 
         return Result.Success();
     }

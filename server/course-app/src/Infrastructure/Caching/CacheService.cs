@@ -1,33 +1,30 @@
 ﻿using Application.Abstractions.Caching;
-using Microsoft.Extensions.Caching.Distributed;
+using StackExchange.Redis;
 using System.Text.Json;
 
 namespace Infrastructure.Caching;
 
 public sealed class CacheService : ICacheService
 {
-    private readonly IDistributedCache _distributedCache;
+    private readonly IDatabase _redisDatabase;
 
-    public CacheService(IDistributedCache distributedCache)
+    public CacheService(IConnectionMultiplexer redisConnection)
     {
-        _distributedCache = distributedCache;
+        _redisDatabase = redisConnection.GetDatabase();
     }
 
     public async Task SetAsync<T>(string key, T value, TimeSpan expiration)
     {
-        var options = new DistributedCacheEntryOptions
-        {
-            AbsoluteExpirationRelativeToNow = expiration
-        };
-
+       
         var jsonData = JsonSerializer.Serialize(value);
-        await _distributedCache.SetStringAsync(key, jsonData, options);
+        await _redisDatabase.StringSetAsync(key, jsonData, expiration);
     }
 
     public async Task<T?> GetAsync<T>(string key)
     {
-        var jsonData = await _distributedCache.GetStringAsync(key);
-        if (jsonData == null)
+        var jsonData = await _redisDatabase.StringGetAsync(key);
+
+        if (jsonData.IsNullOrEmpty)
         {
             return default;
         }
@@ -37,6 +34,11 @@ public sealed class CacheService : ICacheService
 
     public async Task RemoveAsync(string key)
     {
-        await _distributedCache.RemoveAsync(key);
+        await _redisDatabase.KeyDeleteAsync(key);
+    }
+
+    public async Task<bool> ExistsAsync(string key)
+    {
+        return await _redisDatabase.KeyExistsAsync(key);
     }
 }
