@@ -1,4 +1,7 @@
-﻿namespace Application.Services;
+﻿using Domain.Core.Results;
+using FluentValidation;
+
+namespace Application.Services;
 
 public interface IAuthenticationService
 {
@@ -14,21 +17,34 @@ public class AuthenticationService : IAuthenticationService
     private readonly IJwtProvider _jwtProvider;
     private readonly IRepository<RefreshToken> _refreshTokenRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IValidator<LoginDto> _loginDtoValidator;
+    private readonly IValidator<ChangePasswordDto> _changePasswordDtoValidator;
 
     public AuthenticationService(
         UserManager<ApplicationUser> userManager, 
         IJwtProvider jwtProvider, 
         IRepository<RefreshToken> refreshTokenRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IValidator<LoginDto> loginDtoValidator,
+        IValidator<ChangePasswordDto> changePasswordDtoValidator)
     {
         _userManager = userManager;
         _jwtProvider = jwtProvider;
         _refreshTokenRepository = refreshTokenRepository;
         _unitOfWork = unitOfWork;
+        _loginDtoValidator = loginDtoValidator;
+        _changePasswordDtoValidator = changePasswordDtoValidator;
     }
 
     public async Task<Result<AccessToken>> LoginAsync(LoginDto loginDto)
     {
+        var validationResult = await _loginDtoValidator.ValidateAsync(loginDto);
+        if (!validationResult.IsValid)
+        {
+            var errors = validationResult.Errors.Select(x => DomainErrors.User.CannotCreate(x.ErrorMessage)).ToList();
+            return Result.Failure<AccessToken>(errors);
+        }
+
         var user = await _userManager.FindByEmailAsync(loginDto.Email);
         if (user == null)
         {
@@ -58,6 +74,13 @@ public class AuthenticationService : IAuthenticationService
 
     public async Task<Result> ChangePassword(Guid userId, ChangePasswordDto changePasswordDto)
     {
+        var validationResult = await _changePasswordDtoValidator.ValidateAsync(changePasswordDto);
+        if (!validationResult.IsValid)
+        {
+            var errors = validationResult.Errors.Select(x => DomainErrors.User.CannotCreate(x.ErrorMessage)).ToList();
+            return Result.Failure(errors);
+        }
+
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user is null)
         {

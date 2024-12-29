@@ -17,7 +17,7 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(CategoryCreateDto categoryCreateDto)
+    public async Task<IActionResult> Create(CategorySaveDto categoryCreateDto)
     {
         var result = await _categoryService.Create(categoryCreateDto);
         return result.IsSuccess ? Created(nameof(result.Data.Id), result) : result.ToProblemDetails();
@@ -25,7 +25,7 @@ public class CategoriesController : ControllerBase
 
     [HttpPut]
     [Route("{categoryId}")]
-    public async Task<IActionResult> Update(Guid categoryId, CategoryUpdateDto categoryUpdateDto)
+    public async Task<IActionResult> Update(Guid categoryId, CategorySaveDto categoryUpdateDto)
     {
         var result = await _categoryService.Update(categoryId, categoryUpdateDto);
         return result.IsSuccess ? NoContent() : result.ToProblemDetails();
