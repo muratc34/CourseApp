@@ -1,11 +1,16 @@
 ﻿using Application.Abstractions.Emails;
 using Application.Abstractions.Iyzico;
+using Application.Abstractions.Messaging;
 using Application.Abstractions.Notifications;
 using Infrastructure.Emails;
 using Infrastructure.Emails.Settings;
 using Infrastructure.Iyzıco;
 using Infrastructure.Iyzıco.Settings;
+using Infrastructure.Messaging;
+using Infrastructure.Messaging.Consumers;
+using Infrastructure.Messaging.Settings;
 using Infrastructure.Notifications;
+using MassTransit;
 
 namespace Infrastructure;
 
@@ -16,6 +21,7 @@ public static class DependencyInjection
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SettingsKey));
         services.Configure<IyzicoSettings>(configuration.GetSection(IyzicoSettings.SettingsKey));
         services.Configure<MailSettings>(configuration.GetSection(MailSettings.SettingsKey));
+        services.Configure<MessageBrokerSettings>(configuration.GetSection(MessageBrokerSettings.SettingsKey));
 
         services.AddDbContext<DatabaseContext>(options =>
         {
@@ -45,6 +51,25 @@ public static class DependencyInjection
             };
         });
 
+        services.AddMassTransit(busConfigurator =>
+        {
+            busConfigurator.AddConsumer<UserCreatedEventConsumer>();
+
+            busConfigurator.SetKebabCaseEndpointNameFormatter();
+
+            busConfigurator.UsingRabbitMq((context, cfg) =>
+            {
+                cfg.Host(new Uri(configuration["MessageBroker:Host"]), h =>
+                {
+                    h.Username(configuration["MessageBroker:Username"]);
+                    h.Password(configuration["MessageBroker:Password"]);
+                });
+
+                cfg.ConfigureEndpoints(context);
+            });
+
+        });
+
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<ICourseRepository, CourseRepository>();
@@ -58,9 +83,9 @@ public static class DependencyInjection
         services.AddTransient<IIyzicoService, IyzicoService>(); 
         services.AddTransient<IEmailService, EmailService>();
         services.AddTransient<IEmailNotificationService, EmailNotificationService>();
+        services.AddTransient<IEventPublisher, RabbitMQEventPublisher>();
 
         services.AddAuthorization();
-
         return services;
     }
 }
