@@ -1,6 +1,11 @@
-﻿using Application.Abstractions.Iyzico;
+﻿using Application.Abstractions.Emails;
+using Application.Abstractions.Iyzico;
+using Application.Abstractions.Notifications;
+using Infrastructure.Emails;
+using Infrastructure.Emails.Settings;
 using Infrastructure.Iyzıco;
 using Infrastructure.Iyzıco.Settings;
+using Infrastructure.Notifications;
 
 namespace Infrastructure;
 
@@ -10,6 +15,7 @@ public static class DependencyInjection
     {
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SettingsKey));
         services.Configure<IyzicoSettings>(configuration.GetSection(IyzicoSettings.SettingsKey));
+        services.Configure<MailSettings>(configuration.GetSection(MailSettings.SettingsKey));
 
         services.AddDbContext<DatabaseContext>(options =>
         {
@@ -49,7 +55,9 @@ public static class DependencyInjection
         services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<IJwtProvider, JwtProvider>();
 
-        services.AddTransient<IIyzicoService, IyzicoService>();
+        services.AddTransient<IIyzicoService, IyzicoService>(); 
+        services.AddTransient<IEmailService, EmailService>();
+        services.AddTransient<IEmailNotificationService, EmailNotificationService>();
 
         services.AddAuthorization();
 
