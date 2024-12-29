@@ -28,6 +28,6 @@ public class PaymentsController : ControllerBase
     public async Task<IActionResult> PaymentCallback([FromForm] IFormCollection collection)
     {
         await _paymentService.Callback(collection["token"]);
-        return Ok(collection);
+        return Ok();
     }
 }

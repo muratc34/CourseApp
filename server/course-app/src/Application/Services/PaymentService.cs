@@ -1,4 +1,5 @@
 ﻿using Application.Abstractions.Iyzico;
+using FluentValidation;
 
 namespace Application.Services;
 
@@ -14,23 +15,32 @@ internal class PaymentService : IPaymentService
     private readonly IIyzicoService _iyzicoService;
     UserManager<ApplicationUser> _userManager;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IValidator<PaymentCreateDto> _paymentCreateDtoValidator;
 
     public PaymentService(
         IPaymentRepository paymentRepository, 
         IIyzicoService iyzicoService,
         IOrderService orderService,
         UserManager<ApplicationUser> userManager,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IValidator<PaymentCreateDto> paymentCreateDtoValidator)
     {
         _paymentRepository = paymentRepository;
         _iyzicoService = iyzicoService;
         _orderService = orderService;
         _userManager = userManager;
         _unitOfWork = unitOfWork;
+        _paymentCreateDtoValidator = paymentCreateDtoValidator;
     }
 
     public async Task<Result<PaymentDto>> Create(PaymentCreateDto paymentCreateDto)
     {
+        var validationResult = await _paymentCreateDtoValidator.ValidateAsync(paymentCreateDto);
+        if (!validationResult.IsValid)
+        {
+            var errors = validationResult.Errors.Select(x => DomainErrors.User.CannotCreate(x.ErrorMessage)).ToList();
+            return Result.Failure<PaymentDto>(errors);
+        }
         var order = (await _orderService.GetOrderById(paymentCreateDto.OrderId)).Data;
         if (order is null)
         {

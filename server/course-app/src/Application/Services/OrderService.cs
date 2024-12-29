@@ -1,4 +1,8 @@
-﻿namespace Application.Services;
+﻿using Application.DTOs;
+using Application.FluentValidations;
+using FluentValidation;
+
+namespace Application.Services;
 
 public interface IOrderService
 {
@@ -14,21 +18,30 @@ internal class OrderService : IOrderService
     private readonly ICourseService _courseService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IValidator<OrderCreateDto> _orderCreateDtoValidator;
 
     public OrderService(
         IOrderRepository orderRepository,
         ICourseService courseService,
         IUnitOfWork unitOfWork,
-        UserManager<ApplicationUser> userManager)
+        UserManager<ApplicationUser> userManager,
+        IValidator<OrderCreateDto> orderCreateDtoValidator)
     {
         _orderRepository = orderRepository;
         _courseService = courseService;
         _unitOfWork = unitOfWork;
         _userManager = userManager;
+        _orderCreateDtoValidator = orderCreateDtoValidator;
     }
 
     public async Task<Result<OrderDto>> Create(OrderCreateDto orderCreateDto)
     {
+        var validationResult = await _orderCreateDtoValidator.ValidateAsync(orderCreateDto);
+        if (!validationResult.IsValid)
+        {
+            var errors = validationResult.Errors.Select(x => DomainErrors.User.CannotCreate(x.ErrorMessage)).ToList();
+            return Result.Failure<OrderDto>(errors);
+        }
         var user = await _userManager.Users.Where(u => u.Id == orderCreateDto.UserId).Include(u => u.Enrollments).FirstOrDefaultAsync();
         if (user is null)
         {
@@ -53,7 +66,7 @@ internal class OrderService : IOrderService
         await _orderRepository.CreateAsync(order);
         await _unitOfWork.SaveChangesAsync();
 
-        return Result.Success(new OrderDto(order.Id, order.CreatedOnUtc, order.ModifiedOnUtc, order.UserId, order.Status));
+        return Result.Success(new OrderDto(order.Id, order.CreatedOnUtc, order.ModifiedOnUtc, order.UserId, order.Status, order.City, order.Country, order.Address, order.ZipCode, order.TcNo));
     }
 
     public async Task<Result> Delete(Guid orderId)
@@ -80,7 +93,7 @@ internal class OrderService : IOrderService
                 x.ModifiedOnUtc,
                 x.UserId,
                 x.Status,
-                x.OrderDetails.Select(oc => new CourseDto(
+                x.OrderDetails.Select(oc => new CourseDetailDto(
                     oc.Course.Id,
                     oc.Course.CreatedOnUtc,
                     oc.Course.ModifiedOnUtc,
@@ -91,6 +104,7 @@ internal class OrderService : IOrderService
                     new CategoryDto(                        
                         oc.Course.Category.Id,
                         oc.Course.Category.CreatedOnUtc,
+                        oc.Course.Category.ModifiedOnUtc,
                         oc.Course.Category.Name),
                     new UserDto(
                         oc.Course.Instructor.Id,
@@ -122,7 +136,7 @@ internal class OrderService : IOrderService
                 x.ModifiedOnUtc,
                 x.UserId, 
                 x.Status, 
-                x.OrderDetails.Select(oc => new CourseDto(
+                x.OrderDetails.Select(oc => new CourseDetailDto(
                     oc.Course.Id,
                     oc.Course.CreatedOnUtc,
                     oc.Course.ModifiedOnUtc,
@@ -133,6 +147,7 @@ internal class OrderService : IOrderService
                     new CategoryDto(
                         oc.Course.Category.Id,
                         oc.Course.Category.CreatedOnUtc,
+                        oc.Course.Category.ModifiedOnUtc,
                         oc.Course.Category.Name),
                     new UserDto(
                         oc.Course.Instructor.Id,
