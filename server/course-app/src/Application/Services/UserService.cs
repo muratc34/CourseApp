@@ -1,11 +1,16 @@
-﻿using Application.FluentValidations;
+﻿using Application.Abstractions.Authentication;
+using Application.Abstractions.Messaging;
+using Application.Abstractions.UnitOfWorks;
+using Application.FluentValidations;
+using Domain.Events;
 using FluentValidation;
+using System;
 
 namespace Application.Services;
 
 public interface IUserService
 {
-    Task<Result<UserDto>> CreateAsync(UserCreateDto userCreateDto);
+    Task<Result<AccessToken>> CreateAsync(UserCreateDto userCreateDto);
     Task<Result<UserDto>> GetUserByIdAsync(Guid userId);
     Task<Result> UpdateAsync(Guid userId, UserUpdateDto userUpdateDto);
     Task<Result> DeleteAsync(Guid userId);
@@ -16,24 +21,36 @@ public class UserService : IUserService
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IValidator<UserCreateDto> _userCreateDtoValidator;
     private readonly IValidator<UserUpdateDto> _userUpdateDtoValidator;
+    private readonly IEventPublisher _eventPublisher;
+    private readonly IJwtProvider _jwtProvider;
+    private readonly IRepository<RefreshToken> _refreshTokenRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
     public UserService(
         UserManager<ApplicationUser> userManager, 
         IValidator<UserCreateDto> userCreateDtoValidator, 
-        IValidator<UserUpdateDto> userUpdateDtoValidator)
+        IValidator<UserUpdateDto> userUpdateDtoValidator,
+        IEventPublisher eventPublisher,
+        IJwtProvider jwtProvider,
+        IRepository<RefreshToken> refreshTokenRepository,
+        IUnitOfWork unitOfWork)
     {
         _userManager = userManager;
         _userCreateDtoValidator = userCreateDtoValidator;
         _userUpdateDtoValidator = userUpdateDtoValidator;
+        _eventPublisher = eventPublisher;
+        _jwtProvider = jwtProvider;
+        _unitOfWork = unitOfWork;
+        _refreshTokenRepository = refreshTokenRepository;
     }
 
-    public async Task<Result<UserDto>> CreateAsync(UserCreateDto userCreateDto)
+    public async Task<Result<AccessToken>> CreateAsync(UserCreateDto userCreateDto)
     {
         var validationResult = await _userCreateDtoValidator.ValidateAsync(userCreateDto);
         if (!validationResult.IsValid)
         {
             var errors = validationResult.Errors.Select(x => DomainErrors.User.CannotCreate(x.ErrorMessage)).ToList();
-            return Result.Failure<UserDto>(errors);
+            return Result.Failure<AccessToken>(errors);
         }
 
         var user = ApplicationUser.Create(userCreateDto.FirstName, userCreateDto.LastName, userCreateDto.Email, userCreateDto.UserName, userCreateDto.ProfilePictureUrl);
@@ -44,10 +61,27 @@ public class UserService : IUserService
             var errors = result.Errors
                 .Select(x => DomainErrors.User.CannotCreate(x.Description))
                 .ToList();
-            return Result.Failure<UserDto>(errors);
+            return Result.Failure<AccessToken>(errors);
         }
 
-        return Result.Success(new UserDto(user.Id, user.CreatedOnUtc, user.FullName, user.Email, user.UserName, user.ProfilePictureUrl));
+        var emailVerificationToken = new Random().Next(100000, 1000000);
+
+        var userRegisteredEvent = new UserRegisteredEvent(user.Id, user.Email, user.FullName, emailVerificationToken);
+        await _eventPublisher.PublishAsync(userRegisteredEvent);
+
+        var token = await _jwtProvider.CreateToken(user);
+        var userRefreshToken = await _refreshTokenRepository.GetAsync(x => x.UserId == user.Id);
+        if (userRefreshToken == null)
+        {
+            await _refreshTokenRepository.CreateAsync(RefreshToken.Create(user.Id, token.RefreshToken, token.RefreshTokenExpiration));
+        }
+        else
+        {
+            userRefreshToken.UpdateToken(token.RefreshToken, token.RefreshTokenExpiration);
+        }
+
+        await _unitOfWork.SaveChangesAsync();
+        return Result.Success(token);
     }
 
     public async Task<Result<UserDto>> GetUserByIdAsync(Guid userId)
