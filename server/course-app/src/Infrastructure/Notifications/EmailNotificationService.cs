@@ -14,9 +14,8 @@ internal class EmailNotificationService : IEmailNotificationService
     {
         var mailRequest = new MailRequest(
                welcomeEmail.EmailTo,
-               "Welcome to CodeVich! 🎉",
-               $"Welcome to CodeVich {welcomeEmail.Name}," +
-               Environment.NewLine +
+               "Welcome to Inveon Course App! 🎉",
+               $"Welcome to Inveon Course App {welcomeEmail.Name}," +
                Environment.NewLine +
                $"You have registered with the email {welcomeEmail.EmailTo}.");
 
@@ -28,20 +27,20 @@ internal class EmailNotificationService : IEmailNotificationService
         var mailRequest = new MailRequest(
                emailVerification.EmailTo,
                "Verify your email address",
-               $@"Welcome to CodeVich, {emailVerification.Name}!
+               $@"Welcome to Inveon Course App, {emailVerification.Name}!
 
-                Thank you for signing up on CodeVich. To complete your registration, please verify your email address by clicking the link below:
+                Thank you for signing up on Inveon Course App. To complete your registration, please verify your e-mail address using the code below:
 
-                Your verification token: {emailVerification.Token}
+                Your verification code: {emailVerification.Token}
 
                 If you did not sign up for an account on CodeVich, please ignore this email.
 
-                For any questions, feel free to contact our support team at [SupportEmail].
+                For any questions, feel free to contact our support team at courseapp34@gmail.com.
 
                 Welcome aboard!
 
                 Best regards,
-                The CodeVich Team
+                The Inveon Course App Team
                 ");
 
         await _emailService.SendEmailAsync(mailRequest);
