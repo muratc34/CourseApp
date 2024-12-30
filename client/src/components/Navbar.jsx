@@ -3,11 +3,14 @@ import { Link } from "react-router-dom";
 import { MdMenu, MdClose } from "react-icons/md";
 import { CiSearch } from "react-icons/ci";
 import { PiShoppingCartSimpleThin } from "react-icons/pi";
+import { useAuth } from "../contexts/AuthContext";
+import defaultUserPic from '/src/assets/default-user.png';
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+
+  const {user, isAuthenticated, logout} = useAuth();
 
   const navItems = [
     { id: 1, title: "Home", path: "/" },
@@ -19,51 +22,51 @@ const Navbar = () => {
     {id: 2, title: "Courses", path: "/"}
   ];
 
-  const user = {
+  const mockUser = {
     name: "Tom Cook",
     email: "tom@example.com",
-    avatar: "https://via.placeholder.com/40", // Placeholder image
+    avatar: "https://via.placeholder.com/40"
   };
 
   return (
     <nav className="items-center py-8 bg-white shadow-md">
       <div className="container flex justify-between">
         <div className="flex items-center">
-          <span className="text-2xl font-bold text-indigo-500">
+          <Link to={"/"} className="text-2xl font-bold text-indigo-600">
             Inveon Course
-          </span>
+          </Link>
         </div>
         <div className="flex-grow justify-center md:flex hidden">
           <div className="relative w-full max-w-md">
             <input
               type="text"
               placeholder="Search"
-              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600"
             />
-            <CiSearch className="absolute top-2 left-3 text-2xl text-gray-500" />
+            <CiSearch className="absolute top-2 left-3 text-2xl text-gray-600" />
           </div>
         </div>
         <button
           className="text-gray-600 xl:hidden block"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         >
-          {isMobileMenuOpen ? <MdClose size={32} className="hover:cursor-pointer hover:text-indigo-500"/> : <MdMenu size={32} className="hover:cursor-pointer hover:text-indigo-500"/>}
+          {isMobileMenuOpen ? <MdClose size={32} className="hover:cursor-pointer hover:text-indigo-600"/> : <MdMenu size={32} className="hover:cursor-pointer hover:text-indigo-600"/>}
         </button>
         <ul className="hidden xl:flex items-center gap-6 text-gray-600 mx-5">
           {navItems.map((item) => (
             <li key={item.id}>
               <Link
                 to={item.path}
-                className="inline-block py-1 px-3 hover:text-indigo-500 font-semibold duration-200"
+                className="inline-block py-1 px-3 hover:text-indigo-600 font-semibold duration-200"
               >
                 {item.title}
               </Link>
             </li>
           ))}
         </ul>
-        {isLoggedIn ? (
+        {isAuthenticated ? (
           <div className="hidden xl:flex items-center">
-            <div className="relative rounded-full p-1 hover:text-indigo-500">
+            <div className="relative rounded-full p-1 hover:text-indigo-600">
               <PiShoppingCartSimpleThin
                 size={32}
                 className="hover:cursor-pointer font-semibold"
@@ -77,7 +80,7 @@ const Navbar = () => {
                 >
                   <img
                     className="size-8 rounded-full"
-                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                    src={user.profilePictureUrl ?? defaultUserPic}
                     alt="user-avatar"
                   />
                 </div>
@@ -101,12 +104,12 @@ const Navbar = () => {
           </div>
         ) : (
           <div className="hidden xl:flex absolute inset-y-0 right-0 flex items-center sm:static sm:inset-auto sm:ml-6 sm:pr-0 gap-5">
-            <button className="hover:bg-indigo-500 text-indigo-500 font-semibold hover:text-white rounded-md border-2 border-indigo-500 px-6 py-2 duration-200 hidden xl:block">
+            <Link to={"/login"} className="hover:bg-indigo-600 text-indigo-600 font-semibold hover:text-white rounded-md border-2 border-indigo-600 px-6 py-2 duration-200 hidden xl:block">
               Login
-            </button>
-            <button className="hover:bg-indigo-500 text-indigo-500 font-semibold hover:text-white rounded-md border-2 border-indigo-500 px-6 py-2 duration-200 hidden xl:block">
+            </Link>
+            <Link to={"/register"} className="hover:bg-indigo-600 text-indigo-600 font-semibold hover:text-white rounded-md border-2 border-indigo-600 px-6 py-2 duration-200 hidden xl:block">
               Register
-            </button>
+            </Link>
           </div>
         )}
       </div>
@@ -118,7 +121,7 @@ const Navbar = () => {
               <li key={item.id} className="w-full">
                 <Link
                   to={item.path}
-                  className="block w-full text-left font-semibold rounded-md hover:bg-indigo-500 hover:text-white duration-200 py-2 px-3"
+                  className="block w-full text-left font-semibold rounded-md hover:bg-indigo-600 hover:text-white duration-200 py-2 px-3"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item.title}
@@ -127,43 +130,47 @@ const Navbar = () => {
             ))}
           </ul>
           <hr />
-          {isLoggedIn ? (
+          {isAuthenticated ? (
             <div className="mt-4 flex flex-col gap-4">
               <div className="flex items-center gap-3 px-3">
               <img
                     className="size-12 rounded-full"
-                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                    src={user.profilePictureUrl ?? defaultUserPic}
                     alt="user-avatar"
                   />
                 <div>
                   <p className="font-semibold text-gray-600">{user.name}</p>
-                  <p className="text-sm text-gray-500">{user.email}</p>
+                  <p className="text-sm text-gray-600">{user.email}</p>
                 </div>
               </div>
               {profileNavItems.map((item) => (
                 <Link to={item.path} 
                   key={item.id}
                   onClick={() => setIsMenuOpen(false)}>
-                  <div className="hover:bg-indigo-500 text-gray-600 font-semibold hover:text-white rounded-md duration-200 w-full px-3 py-2">
+                  <div className="hover:bg-indigo-600 text-gray-600 font-semibold hover:text-white rounded-md duration-200 w-full px-3 py-2">
                     {item.title}
                   </div>
                 </Link>
               ))}
               <div
-                className="hover:bg-indigo-500 text-gray-600 font-semibold hover:text-white rounded-md px-3 py-2 duration-200 w-full hover:cursor-pointer"
-                onClick={() => setIsLoggedIn(false)}
+                className="hover:bg-indigo-600 text-gray-600 font-semibold hover:text-white rounded-md px-3 py-2 duration-200 w-full hover:cursor-pointer"
+                onClick={() => logout()}
               >
                 Logout
               </div>
             </div>
           ) : (
             <div className="mt-8 flex flex-col gap-4">
-              <button className="hover:bg-indigo-500 text-gray-600 font-semibold hover:text-white rounded-md border-2 border-indigo-500 px-6 py-2 duration-200 w-full">
+              <Link to={"/login"} 
+              className="hover:bg-indigo-600 text-indigo-600 font-semibold hover:text-white rounded-md border-2 border-indigo-600 px-6 py-2 duration-200 w-full"
+              onClick={() => setIsMenuOpen(false)}>
                 Login
-              </button>
-              <button className="hover:bg-indigo-500 text-gray-600 font-semibold hover:text-white rounded-md border-2 border-indigo-500 px-6 py-2 duration-200 w-full">
+              </Link>
+              <Link to={"/register"} 
+              className="hover:bg-indigo-600 text-indigo-600 font-semibold hover:text-white rounded-md border-2 border-indigo-600 px-6 py-2 duration-200 w-full"
+              onClick={() => setIsMenuOpen(false)}>
                 Register
-              </button>
+              </Link>
             </div>
           )}
         </div>

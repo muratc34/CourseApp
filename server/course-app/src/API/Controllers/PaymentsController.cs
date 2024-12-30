@@ -27,7 +27,6 @@ public class PaymentsController : ControllerBase
 
     [HttpPost]
     [Route("Callback")]
-    [Authorize("user")]
     public async Task<IActionResult> PaymentCallback([FromForm] IFormCollection collection)
     {
         await _paymentService.Callback(collection["token"]);

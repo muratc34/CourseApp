@@ -53,6 +53,7 @@ public class UsersController : ControllerBase
 
     [HttpPut]
     [Route("{userId}/role/{roleId}")]
+    [Authorize("admin")]
     public async Task<IActionResult> AddRoleToUser(Guid userId, Guid roleId)
     {
         var result = await _userService.AddRoleToUser(userId, roleId);
