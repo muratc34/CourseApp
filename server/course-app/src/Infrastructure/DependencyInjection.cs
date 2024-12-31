@@ -1,22 +1,4 @@
-﻿using Application.Abstractions.Caching;
-using Application.Abstractions.Emails;
-using Application.Abstractions.Iyzico;
-using Application.Abstractions.Messaging;
-using Application.Abstractions.Notifications;
-using Infrastructure.Caching;
-using Infrastructure.Caching.Settings;
-using Infrastructure.Emails;
-using Infrastructure.Emails.Settings;
-using Infrastructure.Iyzıco;
-using Infrastructure.Iyzıco.Settings;
-using Infrastructure.Messaging;
-using Infrastructure.Messaging.Consumers;
-using Infrastructure.Messaging.Settings;
-using Infrastructure.Notifications;
-using MassTransit;
-using StackExchange.Redis;
-
-namespace Infrastructure;
+﻿namespace Infrastructure;
 
 public static class DependencyInjection
 {

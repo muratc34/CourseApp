@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace Application.Abstractions.Iyzico;
+﻿namespace Application.Abstractions.Iyzico;
 
 
 public record InitializeCheckoutFormDto(Guid OrderId, Guid UserId, string FirstName, string LastName, string Email, string TcNo, string Address, string City, string Country, string ZipCode, ICollection<BasketItemDto> basketItems);

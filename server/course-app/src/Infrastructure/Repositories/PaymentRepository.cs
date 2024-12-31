@@ -1,6 +1,6 @@
 ﻿namespace Infrastructure.Repositories;
 
-public class PaymentRepository : Repository<Payment>, IPaymentRepository
+public class PaymentRepository : Repository<Domain.Entities.Payment>, IPaymentRepository
 {
     public PaymentRepository(DatabaseContext context) : base(context)
     {

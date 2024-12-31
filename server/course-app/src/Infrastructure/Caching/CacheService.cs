@@ -1,6 +1,4 @@
-﻿using Application.Abstractions.Caching;
-using StackExchange.Redis;
-using System.Text.Json;
+﻿
 
 namespace Infrastructure.Caching;
 

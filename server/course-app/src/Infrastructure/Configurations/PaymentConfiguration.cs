@@ -1,8 +1,8 @@
 ﻿namespace Infrastructure.Configurations;
 
-public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
+public sealed class PaymentConfiguration : IEntityTypeConfiguration<Domain.Entities.Payment>
 {
-    public void Configure(EntityTypeBuilder<Payment> builder)
+    public void Configure(EntityTypeBuilder<Domain.Entities.Payment> builder)
     {
         builder.HasKey(p => p.Id);
 
@@ -24,7 +24,7 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
 
         builder.HasOne(p => p.Order)
             .WithOne(o => o.Payment)
-            .HasForeignKey<Payment>(p => p.OrderId)
+            .HasForeignKey<Domain.Entities.Payment>(p => p.OrderId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

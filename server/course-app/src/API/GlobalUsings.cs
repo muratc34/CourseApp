@@ -1,2 +1,11 @@
-﻿global using Application;
+﻿global using API.Extensions;
+global using API.Middlewares;
+global using Application;
+global using Application.DTOs;
+global using Application.Services;
+global using Domain.Core.Results;
 global using Infrastructure;
+global using Microsoft.AspNetCore.Authorization;
+global using Microsoft.AspNetCore.Diagnostics;
+global using Microsoft.AspNetCore.Mvc;
+global using Serilog;

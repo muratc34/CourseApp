@@ -1,8 +1,4 @@
-﻿using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
-using Serilog;
-
-namespace API.Middlewares;
+﻿namespace API.Middlewares;
 
 public sealed class GlobalExceptionHandler : IExceptionHandler
 {

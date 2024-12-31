@@ -1,8 +1,4 @@
-﻿using Domain.Core.Results;
-using Microsoft.AspNetCore.Mvc;
-using Serilog;
-
-namespace API.Extensions;
+﻿namespace API.Extensions;
 
 public static class ResultExtensions
 {

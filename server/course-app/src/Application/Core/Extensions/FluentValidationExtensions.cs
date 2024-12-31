@@ -1,6 +1,4 @@
-﻿using FluentValidation;
-
-namespace Application.Core.Extensions;
+﻿namespace Application.Core.Extensions;
 
 public static class FluentValidationExtensions
 {

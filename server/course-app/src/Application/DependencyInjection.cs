@@ -1,7 +1,4 @@
-﻿using Application.FluentValidations;
-using FluentValidation;
-
-namespace Application;
+﻿namespace Application;
 
 public static class DependencyInjection
 {
