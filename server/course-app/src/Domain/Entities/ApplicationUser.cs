@@ -62,4 +62,9 @@ public class ApplicationUser : IdentityUser<Guid>, IAuditableEntity
     {
         EmailConfirmed = true;
     }
+
+    public void UpdateUserProfilePictureUrl(string url)
+    {
+        ProfilePictureUrl = url;
+    }
 }

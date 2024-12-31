@@ -62,4 +62,18 @@ public class UsersController : ControllerBase
         var result = await _userService.RemoveRoleFromUser(userId, roleId);
         return result.IsSuccess ? NoContent() : result.ToProblemDetails();
     }
+
+    [HttpPost]
+    [Route("UploadImage/{userId}")]
+    public async Task<IActionResult> UploadFile(Guid userId, IFormFile formFile, CancellationToken cancellationToken)
+    {
+        byte[] fileBytes;
+        using (var memoryStream = new MemoryStream())
+        {
+            await formFile.CopyToAsync(memoryStream);
+            fileBytes = memoryStream.ToArray();
+        }
+        var result = await _userService.UpdateUserPicture(userId, Path.GetExtension(formFile.FileName), fileBytes, cancellationToken);
+        return result.IsSuccess ? NoContent() : result.ToProblemDetails();
+    }
 }
