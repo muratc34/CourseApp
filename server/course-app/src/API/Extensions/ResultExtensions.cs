@@ -1,5 +1,6 @@
 ﻿using Domain.Core.Results;
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
 
 namespace API.Extensions;
 
@@ -22,6 +23,15 @@ public static class ResultExtensions
                 { "errors", result.Errors.Select(e => new { e.Code, e.Description }) }
             }
         };
+
+        foreach (var error in result.Errors) 
+        {
+            Log.Error("Error occurred: Type: {@ErrorType}, Code: {@ErrorCode}, Description: {@ErrorDescription}, Status: {@StatusCode}",
+               error.Type,
+               error.Code,
+               error.Description,
+               problemDetails.Status);
+        }
 
         return new ObjectResult(problemDetails)
         {
