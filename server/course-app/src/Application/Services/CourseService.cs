@@ -1,8 +1,4 @@
-﻿using Application.Abstractions.Caching;
-using Application.Abstractions.Caching.Constants;
-using FluentValidation;
-
-namespace Application.Services;
+﻿namespace Application.Services;
 public interface ICourseService
 {
     Task<Result<CourseDto>> Create(CourseCreateDto courseCreateDto);

@@ -1,9 +1,4 @@
-﻿using Application.Abstractions.Iyzico;
-using Infrastructure.Iyzıco.Settings;
-using Iyzipay.Model;
-using Iyzipay.Request;
-
-namespace Infrastructure.Iyzıco;
+﻿namespace Infrastructure.Iyzico;
 
 internal class IyzicoService : IIyzicoService
 {

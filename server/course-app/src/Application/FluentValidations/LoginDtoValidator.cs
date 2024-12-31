@@ -1,8 +1,4 @@
-﻿using Application.Core.Errors;
-using Application.Core.Extensions;
-using FluentValidation;
-
-namespace Application.FluentValidations;
+﻿namespace Application.FluentValidations;
 
 public class LoginDtoValidator : AbstractValidator<LoginDto>
 {

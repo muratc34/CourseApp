@@ -1,6 +1,4 @@
-﻿using Application.Abstractions.Notifications.Contracts;
-
-namespace Application.Abstractions.Notifications;
+﻿namespace Application.Abstractions.Notifications;
 
 public interface IEmailNotificationService
 {

@@ -1,9 +1,4 @@
-﻿using Application.Abstractions.Emails;
-using Infrastructure.Emails.Settings;
-using MailKit.Net.Smtp;
-using MailKit.Security;
-using MimeKit;
-using MimeKit.Text;
+﻿
 
 namespace Infrastructure.Emails;
 

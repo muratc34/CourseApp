@@ -1,6 +1,4 @@
-﻿using Domain.Core.Abstractions;
-
-namespace Application.Abstractions.Messaging;
+﻿namespace Application.Abstractions.Messaging;
 
 public interface IEventPublisher
 {

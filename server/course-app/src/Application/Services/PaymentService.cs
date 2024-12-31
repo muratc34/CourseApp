@@ -1,7 +1,4 @@
-﻿using Application.Abstractions.Iyzico;
-using FluentValidation;
-
-namespace Application.Services;
+﻿namespace Application.Services;
 
 public interface IPaymentService
 {

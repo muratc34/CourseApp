@@ -1,8 +1,4 @@
-﻿using Application.Abstractions.Emails;
-using Application.Abstractions.Notifications;
-using Application.Abstractions.Notifications.Contracts;
-
-namespace Infrastructure.Notifications;
+﻿namespace Infrastructure.Notifications;
 
 internal class EmailNotificationService : IEmailNotificationService
 {

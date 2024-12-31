@@ -1,11 +1,4 @@
-﻿using Application.Abstractions.Caching;
-using Application.Abstractions.Caching.Constants;
-using Application.Abstractions.Messaging;
-using Domain.Core.Results;
-using Domain.Events;
-using FluentValidation;
-
-namespace Application.Services;
+﻿namespace Application.Services;
 
 public interface IAuthenticationService
 {

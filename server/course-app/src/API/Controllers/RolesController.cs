@@ -1,10 +1,4 @@
-﻿using API.Extensions;
-using Application.DTOs;
-using Application.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace API.Controllers
+﻿namespace API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

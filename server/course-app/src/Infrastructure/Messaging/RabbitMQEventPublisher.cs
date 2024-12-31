@@ -1,7 +1,4 @@
-﻿using Application.Abstractions.Messaging;
-using MassTransit;
-
-namespace Infrastructure.Messaging;
+﻿namespace Infrastructure.Messaging;
 
 internal class RabbitMQEventPublisher : IEventPublisher
 {

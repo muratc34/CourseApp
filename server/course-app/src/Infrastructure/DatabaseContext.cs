@@ -10,8 +10,8 @@ public class DatabaseContext : IdentityDbContext<ApplicationUser, ApplicationRol
     public DbSet<ApplicationUser> ApplicationUsers { get; set; }
     public DbSet<Category> Categories { get; set; }
     public DbSet<Course> Courses { get; set; }
-    public DbSet<Order> Orders { get; set; }
-    public DbSet<Payment> Payments { get; set; }
+    public DbSet<Domain.Entities.Order> Orders { get; set; }
+    public DbSet<Domain.Entities.Payment> Payments { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)

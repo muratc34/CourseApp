@@ -1,6 +1,4 @@
-﻿using FluentValidation;
-
-namespace Application.Services;
+﻿namespace Application.Services;
 
 public interface IRoleService
 {

@@ -1,8 +1,4 @@
-﻿using Application.Abstractions.Messaging;
-using Domain.Events;
-using FluentValidation;
-
-namespace Application.Services;
+﻿namespace Application.Services;
 
 public interface IUserService
 {

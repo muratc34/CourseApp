@@ -1,11 +1,4 @@
-﻿using Application.Abstractions.Caching;
-using Application.Abstractions.Caching.Constants;
-using Application.Abstractions.Notifications;
-using Application.Abstractions.Notifications.Contracts;
-using Domain.Events;
-using MassTransit;
-
-namespace Infrastructure.Messaging.Consumers;
+﻿namespace Infrastructure.Messaging.Consumers;
 
 public class UserCreatedEventConsumer : IConsumer<UserRegisteredEvent>
 {
