@@ -19,7 +19,6 @@ public class UserService : IUserService
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly IValidator<UserCreateDto> _userCreateDtoValidator;
-    private readonly IValidator<UserUpdateDto> _userUpdateDtoValidator;
     private readonly IEventPublisher _eventPublisher;
     private readonly IJwtProvider _jwtProvider;
     private readonly IRepository<RefreshToken> _refreshTokenRepository;
@@ -28,8 +27,7 @@ public class UserService : IUserService
     public UserService(
         UserManager<ApplicationUser> userManager,
         RoleManager<ApplicationRole> roleManager, 
-        IValidator<UserCreateDto> userCreateDtoValidator, 
-        IValidator<UserUpdateDto> userUpdateDtoValidator,
+        IValidator<UserCreateDto> userCreateDtoValidator,
         IEventPublisher eventPublisher,
         IJwtProvider jwtProvider,
         IRepository<RefreshToken> refreshTokenRepository,
@@ -38,7 +36,6 @@ public class UserService : IUserService
         _userManager = userManager;
         _roleManager = roleManager;
         _userCreateDtoValidator = userCreateDtoValidator;
-        _userUpdateDtoValidator = userUpdateDtoValidator;
         _eventPublisher = eventPublisher;
         _jwtProvider = jwtProvider;
         _unitOfWork = unitOfWork;
@@ -97,12 +94,6 @@ public class UserService : IUserService
 
     public async Task<Result> UpdateAsync(Guid userId, UserUpdateDto userUpdateDto)
     {
-        var validationResult = await _userUpdateDtoValidator.ValidateAsync(userUpdateDto);
-        if (!validationResult.IsValid)
-        {
-            var errors = validationResult.Errors.Select(x => DomainErrors.User.CannotCreate(x.ErrorMessage)).ToList();
-            return Result.Failure<UserDto>(errors);
-        }
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user is null)
         {

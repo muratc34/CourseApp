@@ -64,4 +64,13 @@ public class CoursesController : ControllerBase
         var result = await _courseService.GetCourseByCategoryId(categoryId, cancellationToken);
         return result.IsSuccess ? Ok(result) : result.ToProblemDetails();
     }
+
+    [HttpGet]
+    [Route("Users/{userId}")]
+    [Authorize(Roles = "admin, user")]
+    public async Task<IActionResult> GetUserCourses(Guid userId, CancellationToken cancellationToken)
+    {
+        var result = await _courseService.GetCoursesByUserId(userId, cancellationToken);
+        return result.IsSuccess ? Ok(result) : result.ToProblemDetails();
+    }
 }

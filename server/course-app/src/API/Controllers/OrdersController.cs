@@ -18,7 +18,7 @@ namespace API.Controllers
         }
 
         [HttpPost]
-        [Authorize("user")]
+        [Authorize(Roles = "user")]
         public async Task<IActionResult> Create(OrderCreateDto orderCreateDto)
         {
             var result = await _orderService.Create(orderCreateDto);
@@ -27,7 +27,7 @@ namespace API.Controllers
 
         [HttpDelete]
         [Route("{orderId}")]
-        [Authorize("user")]
+        [Authorize(Roles = "user")]
         public async Task<IActionResult> Delete(Guid orderId)
         {
             var result = await _orderService.Delete(orderId);
@@ -36,7 +36,7 @@ namespace API.Controllers
 
         [HttpGet]
         [Route("Users/{userId}")]
-        [Authorize("user")]
+        [Authorize(Roles = "user")]
         public async Task<IActionResult> GetByUserId(Guid userId, CancellationToken cancellationToken)
         {
             var result = await _orderService.GetOrdersByUserId(userId, cancellationToken);
@@ -45,7 +45,7 @@ namespace API.Controllers
 
         [HttpGet]
         [Route("{orderId}")]
-        [Authorize("user")]
+        [Authorize(Roles = "user")]
         public async Task<IActionResult> GetById(Guid orderId)
         {
             var result = await _orderService.GetOrderById(orderId);

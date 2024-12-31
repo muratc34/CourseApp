@@ -18,7 +18,7 @@ public class PaymentsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize("user")]
+    [Authorize(Roles = "user")]
     public async Task<IActionResult> Create(PaymentCreateDto paymentCreateDto)
     {
         var result = await _paymentService.Create(paymentCreateDto);

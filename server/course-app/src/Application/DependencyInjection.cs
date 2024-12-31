@@ -24,9 +24,7 @@ public static class DependencyInjection
         services.AddScoped<IValidator<OrderCreateDto>, OrderCreateDtoValidator>();
         services.AddScoped<IValidator<PaymentCreateDto>, PaymentCreateDtoValidator>();
         services.AddScoped<IValidator<UserCreateDto>, UserCreateDtoValidator>();
-        services.AddScoped<IValidator<UserUpdateDto>, UserUpdateDtoValidator>();
         services.AddScoped<IValidator<RoleSaveDto>, RoleSaveDtoValidator>();
-
 
         return services;
     }

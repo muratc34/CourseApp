@@ -59,6 +59,10 @@ internal class OrderService : IOrderService
             {
                 return Result.Failure<OrderDto>(DomainErrors.Course.NotFound);
             }
+            if(course.Data.User.Id == user.Id)
+            {
+                return Result.Failure<OrderDto>(DomainErrors.Course.OwnerCannotOrder);
+            }
             if(user.Enrollments.Any(x => x.CourseId == courseId))
             {
                 return Result.Failure<OrderDto>(DomainErrors.User.AlreadyEnrollment);

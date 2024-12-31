@@ -12,6 +12,7 @@ public static class DomainErrors
         public static Error CannotDelete(string message) => Error.Failure("User.CannotDelete", message);
         public static Error AlreadyEnrollment => Error.Conflict("User.AlreadyEnrollment", "The specified user is already enrollment to specified course.");
         public static Error EmailConfirmationOTPInvalid => Error.Conflict("User.EmailConfirmationOTPInvalid", "The code is incorrect or expired");
+        public static Error EmailAlreadyConfirmed => Error.Conflict("User.EmailAlreadyConfirmed", "The email is already confirmed.");
     }
     public static class Role
     {
@@ -35,6 +36,8 @@ public static class DomainErrors
     public static class Course
     {
         public static Error NotFound => Error.NotFound("Course.NotFound", "The course is not exist.");
+        public static Error CannotUpdate(string desc) => Error.Failure("Course.CannotUpdate", desc);
+        public static Error OwnerCannotOrder => Error.Failure("Course.OwnerCannotOrder", "The course owner cannot buy the course.");
     }
     public static class Order
     {
