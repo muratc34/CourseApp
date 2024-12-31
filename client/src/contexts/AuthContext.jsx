@@ -9,17 +9,27 @@ export const useAuth = () => useContext(AuthContext);
 
 const AuthProvider = ({children}) => {
     const [user, setUser] = useState(null);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token && !isTokenExpired(token)) {
             initializeUser(token);
-        }
+        } else{}
     }, []);
 
     const login = async (email, password) => {
         await authApi.login({email, password})
+        .then(async (response) => {
+            const { token, refreshToken } = response.data;
+            saveTokens(token, refreshToken);
+            await initializeUser(token);
+        }).catch(err => {
+            console.error(err);
+            throw err;
+        });
+    }
+    const register = async(data) => {
+        await userApi.register(data)
         .then(async (response) => {
             const { token, refreshToken } = response.data;
             saveTokens(token, refreshToken);
@@ -43,16 +53,19 @@ const AuthProvider = ({children}) => {
 
     const initializeUser = async (token) => {
         const decoded = jwtDecode(token);
-        console.log(decoded);
+        const roles = decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+        const normalizedRoles = Array.isArray(roles) ? roles : [roles];
         const userId = decoded.sub;
         await userApi.getUserById(userId)
         .then(response => {
-            setUser(response.data);
-            setIsAuthenticated(true);
-        }).catch(error => {
+            setUser({ ...response.data, roles: normalizedRoles });
+            
+            localStorage.setItem('user', JSON.stringify({ ...response.data, roles: normalizedRoles })); 
+        }).catch(async (error) => {
             console.error('Error initializing user:', error);
-            logout();
-        })  
+            await getAuthToken();
+        }) 
+        
     };
     const refreshAuthToken = async () => {
         const refreshToken = localStorage.getItem('refreshToken');
@@ -61,7 +74,7 @@ const AuthProvider = ({children}) => {
             return;
         }
 
-        await authApi.createTokenByRefreshToken({ refreshToken })
+        await authApi.createTokenByRefreshToken({ token: refreshToken })
         .then(async (response) => {
             const { token, refreshToken } = response.data;
             saveTokens(token, refreshToken);
@@ -86,17 +99,16 @@ const AuthProvider = ({children}) => {
     const saveTokens = (token, refreshToken, ) => {
         localStorage.setItem('token', token);
         localStorage.setItem('refreshToken', refreshToken);
-        setIsAuthenticated(true);
     };
     const clearTokens = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
         setUser(null);
-        setIsAuthenticated(false);
     };
 
     return (
-        <AuthContext.Provider value={{user, isAuthenticated, login, logout, getAuthToken}}>
+        <AuthContext.Provider value={{user, login, logout, register, getAuthToken, refreshAuthToken}}>
             {children}
         </AuthContext.Provider>
     )

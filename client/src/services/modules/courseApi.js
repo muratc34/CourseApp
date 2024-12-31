@@ -3,7 +3,8 @@ import privateClient from '../clients/privateClient';
 
 const createAndGetEndpoint = "/Courses";
 const getUpdateAndDeleteCourseEndpoint = (courseId) => `/Courses/${courseId}`;
-const getCoursesByCategoryIdEndpoint = (categoryId) => `/Courses/Categories/${categoryId}`
+const getCoursesByCategoryIdEndpoint = (categoryId) => `/Courses/Categories/${categoryId}`;
+const getUserCoursesByUserIdEndpoint = (userId) => `/Courses/Users/${userId}`;
 
 const courseApi = {
     createCourse: async(data) => {
@@ -28,6 +29,10 @@ const courseApi = {
     },
     getCoursesByCategoryId: async(categoryId) => {
         const response = await publicClient.get(getCoursesByCategoryIdEndpoint(categoryId));
+        return response;
+    },
+    getUserCoursesByUserId: async(userId) => {
+        const response = await privateClient.get(getUserCoursesByUserIdEndpoint(userId));
         return response;
     }
 }

@@ -1,23 +1,18 @@
 import React from 'react'
-import { Navigate } from 'react-router-dom';
-import { useAuth } from './AuthProvider';
+import { Navigate, Outlet } from 'react-router-dom';
 
-const ProtectedRoute = ({ roles = [], redirectPath , noRoleRedirectPath }) => {
-    const {isAuthenticated} = useAuth();
+const ProtectedRoute = () => {
+  const user = JSON.parse(localStorage.getItem("user"));
+  if(!user)
+  {
+    return <Navigate to="/login" />
+  }
+  if(!user.roles ||user.roles == 0)
+  {
+    return <Navigate to="/email-confirm"/>
+  }
 
-    if (!isAuthenticated) {
-        return <Navigate to={redirectPath} replace />;
-    }
-
-    if (!user.role) {
-        return <Navigate to={noRoleRedirectPath} replace />;
-    }
-    
-    if (roles.length > 0 && !roles.includes(user.role)) {
-        return <Navigate to="/" replace />;
-    }
-
-    return children;
-}
+  return <Outlet />
+};
 
 export default ProtectedRoute;

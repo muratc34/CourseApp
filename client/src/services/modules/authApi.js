@@ -6,7 +6,7 @@ const changePasswordEndpoint = (userId) => `/Authentication/ChangePassword/${use
 const createTokenByRefreshTokenEndpoint = "/Authentication/CreateTokenByRefreshToken";
 const exterminateRefreshTokenEndpoint = "/Authentication/ExterminateRefreshToken";
 const confirmEmailEndpoint = "/Authentication/ConfirmEmail";
-const resendEmailConfirmationTokenEndpoint = "/Authentication/ResendEmailConfirmationToken";
+const resendEmailConfirmationTokenEndpoint = (userId) => `/Authentication/ResendEmailConfirmationToken/${userId}`;
 
 const authApi = {
     login: async (data) => {
@@ -29,8 +29,8 @@ const authApi = {
         const response = await privateClient.post(confirmEmailEndpoint, data);
         return response;
     },
-    resendEmailConfirmationToken: async(data) => {
-        const response = await privateClient.post(resendEmailConfirmationTokenEndpoint, data);
+    resendEmailConfirmationToken: async(userId) => {
+        const response = await privateClient.post(resendEmailConfirmationTokenEndpoint(userId));
         return response;
     }
 }

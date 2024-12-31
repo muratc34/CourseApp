@@ -1,7 +1,29 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 const Register = () => {
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [userName, setUserName] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const navigate = useNavigate();
+  const {register} = useAuth();
+
+  const handleRegister = async(e) => {
+    e.preventDefault();
+    await register({
+      firstName: firstName,
+      lastName: lastName,
+      userName: userName,
+      email: email,
+      password: password
+    }).then(() => {
+      navigate("/email-confirm");
+    })
+  }
+
   return (
     <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
@@ -11,7 +33,7 @@ const Register = () => {
       </div>
 
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        <form action="#" method="POST" className="space-y-6">
+        <form onSubmit={handleRegister} className="space-y-6">
           <div className="flex justify-between">
             <div>
               <label
@@ -22,6 +44,8 @@ const Register = () => {
               </label>
               <div className="mt-2">
                 <input
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
                   id="firstName"
                   name="firstName"
                   type="firstName"
@@ -40,6 +64,8 @@ const Register = () => {
               </label>
               <div className="mt-2">
                 <input
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
                   id="lastName"
                   name="lastName"
                   type="lastName"
@@ -59,6 +85,8 @@ const Register = () => {
             </label>
             <div className="mt-2">
               <input
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
                 id="userName"
                 name="userName"
                 type="userName"
@@ -78,6 +106,8 @@ const Register = () => {
             </label>
             <div className="mt-2">
               <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 id="email"
                 name="email"
                 type="email"
@@ -99,6 +129,8 @@ const Register = () => {
             </div>
             <div className="mt-2">
               <input
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 id="password"
                 name="password"
                 type="password"
