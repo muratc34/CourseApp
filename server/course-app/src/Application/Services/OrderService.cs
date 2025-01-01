@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using Domain.Core.Pagination;
+using System.Linq;
 
 namespace Application.Services;
 
@@ -6,7 +7,7 @@ public interface IOrderService
 {
     Task<Result<OrderDto>> Create(OrderCreateDto orderCreateDto);
     Task<Result> Delete(Guid orderId);
-    Task<Result<List<OrderDetailDto>>> GetOrdersByUserId(Guid userId, CancellationToken cancellationToken);
+    Task<Result<PagedList<OrderDetailDto>>> GetOrdersByUserId(Guid userId, int pageIndex, int pageSize, CancellationToken cancellationToken);
     Task<Result<OrderDetailDto>> GetOrderById(Guid orderId);
     Task<Result> UpdateStatusAsCompleted(Guid orderId);
 }
@@ -70,7 +71,7 @@ internal class OrderService : IOrderService
 
         await _orderRepository.CreateAsync(order);
         await _unitOfWork.SaveChangesAsync();
-        await _cacheService.RemoveAsync(CachingKeys.OrdersByUserIdKey(order.UserId));
+        await _cacheService.RemoveAsync(CachingKeys.OrdersByUserIdRemoveKey(order.UserId));
         return Result.Success(new OrderDto(order.Id, order.CreatedOnUtc, order.ModifiedOnUtc, order.UserId, order.Status, order.City, order.Country, order.Address, order.ZipCode, order.TcNo));
     }
 
@@ -86,22 +87,21 @@ internal class OrderService : IOrderService
         _orderRepository.Delete(order);
         await _unitOfWork.SaveChangesAsync();
 
-        await _cacheService.RemoveAsync(CachingKeys.OrdersByUserIdKey(order.UserId));
+        await _cacheService.RemoveAsync(CachingKeys.OrdersByUserIdRemoveKey(order.UserId));
         await _cacheService.RemoveAsync(CachingKeys.OrdersByIdKey(order.Id));
         return Result.Success();
     }
 
-    public async Task<Result<List<OrderDetailDto>>> GetOrdersByUserId(Guid userId, CancellationToken cancellationToken)
+    public async Task<Result<PagedList<OrderDetailDto>>> GetOrdersByUserId(Guid userId, int pageIndex, int pageSize, CancellationToken cancellationToken)
     {
-        var cachedOrders = await _cacheService.GetAsync<List<OrderDetailDto>>(CachingKeys.OrdersByUserIdKey(userId));
+        var cachedOrders = await _cacheService.GetAsync<PagedList<OrderDetailDto>>(CachingKeys.OrdersByUserIdKey(userId, pageIndex, pageSize));
         if (cachedOrders is not null)
         {
             return Result.Success(cachedOrders);
         }
-        
-        var orders = await _orderRepository.FindAll()
-            .Where(x => x.UserId == userId)
-            .Select(x => new OrderDetailDto(
+
+        var pagedOrders = await _orderRepository.GetAllByPagingAsync(pageIndex, pageSize, cancellationToken,
+            x => new OrderDetailDto(
                 x.Id,
                 x.CreatedOnUtc,
                 x.ModifiedOnUtc,
@@ -115,7 +115,7 @@ internal class OrderService : IOrderService
                     oc.Course.Description,
                     oc.Course.Price,
                     oc.Course.ImageUrl,
-                    new CategoryDto(                        
+                    new CategoryDto(
                         oc.Course.Category.Id,
                         oc.Course.Category.CreatedOnUtc,
                         oc.Course.Category.ModifiedOnUtc,
@@ -134,11 +134,11 @@ internal class OrderService : IOrderService
                 x.Address,
                 x.ZipCode,
                 x.TcNo
-            )
-        ).ToListAsync(cancellationToken);
+            ),x => x.UserId == userId);
+        
 
-        await _cacheService.SetAsync(CachingKeys.OrdersByUserIdKey(userId), orders, TimeSpan.FromMinutes(60));
-        return Result.Success(orders);
+        await _cacheService.SetAsync(CachingKeys.OrdersByUserIdKey(userId, pageIndex, pageSize), pagedOrders, TimeSpan.FromMinutes(60));
+        return Result.Success(pagedOrders);
     }
 
     public async Task<Result<OrderDetailDto>> GetOrderById(Guid orderId)
@@ -202,7 +202,7 @@ internal class OrderService : IOrderService
         order.SetStatusAsCompleted();
         await _unitOfWork.SaveChangesAsync();
 
-        await _cacheService.RemoveAsync(CachingKeys.OrdersByUserIdKey(order.UserId));
+        await _cacheService.RemoveAsync(CachingKeys.OrdersByUserIdRemoveKey(order.UserId));
         await _cacheService.RemoveAsync(CachingKeys.OrdersByIdKey(order.Id));
         return Result.Success();
     }

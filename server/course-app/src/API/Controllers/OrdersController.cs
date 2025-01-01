@@ -31,9 +31,9 @@
         [HttpGet]
         [Route("Users/{userId}")]
         [Authorize(Roles = "user")]
-        public async Task<IActionResult> GetByUserId(Guid userId, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetByUserId(Guid userId, CancellationToken cancellationToken, int pageIndex = 1, int pageSize = 12)
         {
-            var result = await _orderService.GetOrdersByUserId(userId, cancellationToken);
+            var result = await _orderService.GetOrdersByUserId(userId, pageIndex, pageSize, cancellationToken);
             return result.IsSuccess ? Ok(result) : result.ToProblemDetails();
         }
 

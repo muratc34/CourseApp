@@ -1,3 +1,5 @@
+using Infrastructure.Seed;
+
 var builder = WebApplication.CreateBuilder(args);
 
 var env = builder.Environment;
@@ -62,5 +64,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.UseCors();
+
+await app.Seed();
 
 app.Run();

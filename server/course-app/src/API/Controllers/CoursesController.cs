@@ -46,25 +46,25 @@ public class CoursesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Get(CancellationToken cancellationToken)
+    public async Task<IActionResult> Get(CancellationToken cancellationToken, int pageIndex = 1, int pageSize = 12)
     {
-        return Ok(await _courseService.GetCourses(cancellationToken));
+        return Ok(await _courseService.GetCourses(pageIndex, pageSize, cancellationToken));
     }
 
     [HttpGet]
     [Route("Categories/{categoryId}")]
-    public async Task<IActionResult> Get(Guid categoryId, CancellationToken cancellationToken)
+    public async Task<IActionResult> Get(Guid categoryId, CancellationToken cancellationToken, int pageIndex = 1, int pageSize = 12)
     {
-        var result = await _courseService.GetCourseByCategoryId(categoryId, cancellationToken);
+        var result = await _courseService.GetCourseByCategoryId(categoryId, pageIndex, pageSize, cancellationToken);
         return result.IsSuccess ? Ok(result) : result.ToProblemDetails();
     }
 
     [HttpGet]
     [Route("Users/{userId}")]
     [Authorize(Roles = "admin, user")]
-    public async Task<IActionResult> GetUserCourses(Guid userId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetUserCourses(Guid userId, CancellationToken cancellationToken, int pageIndex = 1, int pageSize = 12)
     {
-        var result = await _courseService.GetCoursesByUserId(userId, cancellationToken);
+        var result = await _courseService.GetCoursesByUserId(userId,pageIndex, pageSize, cancellationToken);
         return result.IsSuccess ? Ok(result) : result.ToProblemDetails();
     }
 

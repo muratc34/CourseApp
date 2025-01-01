@@ -1,13 +1,15 @@
-﻿
+﻿using Microsoft.Extensions.FileSystemGlobbing.Internal;
 
 namespace Infrastructure.Caching;
 
 public sealed class CacheService : ICacheService
 {
     private readonly IDatabase _redisDatabase;
+    private readonly IConnectionMultiplexer _redisConnection;
 
     public CacheService(IConnectionMultiplexer redisConnection)
     {
+        _redisConnection = redisConnection;
         _redisDatabase = redisConnection.GetDatabase();
     }
 
@@ -30,9 +32,14 @@ public sealed class CacheService : ICacheService
         return JsonSerializer.Deserialize<T>(jsonData);
     }
 
-    public async Task RemoveAsync(string key)
+    public async Task RemoveAsync(string pattern)
     {
-        await _redisDatabase.KeyDeleteAsync(key);
+        var server = _redisConnection.GetServer(_redisConnection.GetEndPoints().First());
+        var keys = server.Keys(pattern: pattern).ToList();
+        foreach (var key in keys)
+        {
+            await _redisDatabase.KeyDeleteAsync(key);
+        }
     }
 
     public async Task<bool> ExistsAsync(string key)

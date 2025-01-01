@@ -1,11 +1,13 @@
-﻿namespace Application.Services;
+﻿using Domain.Core.Pagination;
+
+namespace Application.Services;
 
 public interface ICategoryService
 {
     Task<Result<CategoryDto>> Create(CategorySaveDto categoryCreateDto);
     Task<Result> Update(Guid categoryId, CategorySaveDto categoryUpdateDto);
     Task<Result> Delete(Guid categoryId);
-    Task<Result<List<CategoryDto>>> GetCategories(CancellationToken cancellationToken);
+    Task<Result<PagedList<CategoryDto>>> GetCategories(int pageIndex, int pageSize, CancellationToken cancellationToken);
     Task<Result<CategoryDto>> GetCategoryById(Guid categoryId);
 }
 
@@ -41,7 +43,7 @@ public class CategoryService : ICategoryService
         await _categoryRepository.CreateAsync(category);
         await _unitOfWork.SaveChangesAsync();
 
-        await _cacheService.RemoveAsync(CachingKeys.CategoriesKey);
+        await _cacheService.RemoveAsync(CachingKeys.CategoriesRemoveKey);
 
         return Result.Success(new CategoryDto(category.Id, category.CreatedOnUtc, category.ModifiedOnUtc, category.Name));
     }
@@ -57,26 +59,27 @@ public class CategoryService : ICategoryService
         await _unitOfWork.SaveChangesAsync();
 
         
-        await _cacheService.RemoveAsync(CachingKeys.CategoriesKey);
+        await _cacheService.RemoveAsync(CachingKeys.CategoriesRemoveKey);
         await _cacheService.RemoveAsync(CachingKeys.CategoryByIdKey(category.Id));
         
         return Result.Success();
     }
 
-    public async Task<Result<List<CategoryDto>>> GetCategories(CancellationToken cancellationToken)
+    public async Task<Result<PagedList<CategoryDto>>> GetCategories(int pageIndex, int pageSize, CancellationToken cancellationToken)
     {
-        var cachedCategories = await _cacheService.GetAsync<List<CategoryDto>>(CachingKeys.CategoriesKey);
+        var cachedCategories = await _cacheService.GetAsync<PagedList<CategoryDto>?>(CachingKeys.CategoriesKey(pageIndex, pageSize));
         if (cachedCategories is not null)
         {
             return Result.Success(cachedCategories);
         }
 
-        var categories = await _categoryRepository.FindAll()
-            .Select(x => new CategoryDto(x.Id, x.CreatedOnUtc, x.ModifiedOnUtc, x.Name))
-            .ToListAsync(cancellationToken);
+        var pagedCategories = await _categoryRepository.GetAllByPagingAsync(
+            pageIndex, pageSize, cancellationToken,
+            x => new CategoryDto(x.Id, x.CreatedOnUtc, x.ModifiedOnUtc, x.Name), 
+            null, null);
 
-        await _cacheService.SetAsync(CachingKeys.CategoriesKey, categories, TimeSpan.FromMinutes(60));
-        return Result.Success(categories);
+        await _cacheService.SetAsync(CachingKeys.CategoriesKey(pageIndex, pageSize), pagedCategories, TimeSpan.FromMinutes(60));
+        return Result.Success(pagedCategories);
     }
 
     public async Task<Result> Update(Guid categoryId, CategorySaveDto categoryUpdateDto)
@@ -96,8 +99,8 @@ public class CategoryService : ICategoryService
         category.Update(categoryUpdateDto.Name);
         _categoryRepository.Update(category);
         await _unitOfWork.SaveChangesAsync();
-        
-        await _cacheService.RemoveAsync(CachingKeys.CategoriesKey);
+
+        await _cacheService.RemoveAsync(CachingKeys.CategoriesRemoveKey);
         await _cacheService.RemoveAsync(CachingKeys.CategoryByIdKey(category.Id));
 
         return Result.Success();

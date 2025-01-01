@@ -38,9 +38,9 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Get(CancellationToken cancellationToekn)
+    public async Task<IActionResult> Get(CancellationToken cancellationToekn, int pageIndex = 1, int pageSize = 12)
     {
-        return Ok(await _categoryService.GetCategories(cancellationToekn));
+        return Ok(await _categoryService.GetCategories(pageIndex, pageSize, cancellationToekn));
     }
 
     [HttpGet]
