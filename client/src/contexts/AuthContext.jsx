@@ -14,7 +14,9 @@ const AuthProvider = ({children}) => {
         const token = localStorage.getItem('token');
         if (token && !isTokenExpired(token)) {
             initializeUser(token);
-        } else{}
+        } else{
+            refreshAuthToken()
+        }
     }, []);
 
     const login = async (email, password) => {

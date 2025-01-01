@@ -11,14 +11,15 @@ const Navbar = () => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   const { user, logout } = useAuth();
+  console.log(user)
   const navItems = [
     { id: 1, title: "Home", path: "/" },
     { id: 2, title: "Courses", path: "/courses" },
   ];
 
   const profileNavItems = [
-    { id: 1, title: "Profile", path: `/profile/${user.id}` },
-    { id: 2, title: "My Courses", path: `/profile/${user.id}/courses` },
+    { id: 1, title: "Profile", path: `/profile/${user?.id}` },
+    { id: 2, title: "My Courses", path: `/profile/${user?.id}/courses` },
   ];
 
   return (
