@@ -13,6 +13,7 @@ public interface ICourseService
     Task<Result<PagedList<UserCoursesDetailDto>>> GetCoursesByUserId(Guid userId, int pageIndex, int pageSize, CancellationToken cancellationToken);
     Task<Result> UpdateCourseImage(Guid courseId, string fileExtension, byte[] fileData, CancellationToken cancellationToken);
     Task<Result> RemoveCourseImage(Guid courseId, CancellationToken cancellationToken);
+    Task<Result<List<CourseDetailDto>>> SearchCoursesByName(string searchName, CancellationToken cancellationToken); 
 }
 
 public class CourseService : ICourseService
@@ -356,5 +357,40 @@ public class CourseService : ICourseService
         await _cacheService.RemoveAsync(CachingKeys.CoursesByCagetoryIdRemoveKey(course.CategoryId));
         await _cacheService.RemoveAsync(CachingKeys.UserCoursesByUserIdRemoveAllKey);
         return Result.Success();
+    }
+
+    public async Task<Result<List<CourseDetailDto>>> SearchCoursesByName(string searchName, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(searchName))
+        {
+            return Result.Failure<List<CourseDetailDto>>(ValidationErrors.Course.SearchNameIsRequired);
+        }
+
+        var courses = await _courseRepository.FindAll()
+            .Where(c => c.Name.ToLower().Contains(searchName.ToLower()))
+            .Select(course => new CourseDetailDto(
+                course.Id,
+                course.CreatedOnUtc,
+                course.ModifiedOnUtc,
+                course.Name,
+                course.Description,
+                course.Price,
+                course.ImageUrl,
+                new CategoryDto(
+                        course.Category.Id,
+                        course.Category.CreatedOnUtc,
+                        course.Category.ModifiedOnUtc,
+                        course.Category.Name),
+                new UserDto(
+                    course.Instructor.Id,
+                    course.Instructor.CreatedOnUtc,
+                    course.Instructor.FullName,
+                    course.Instructor.Email,
+                    course.Instructor.UserName,
+                    course.Instructor.ProfilePictureUrl))
+            ).ToListAsync(cancellationToken);
+
+
+        return Result.Success(courses);
     }
 }

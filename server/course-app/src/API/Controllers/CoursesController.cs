@@ -91,4 +91,12 @@ public class CoursesController : ControllerBase
         var result = await _courseService.RemoveCourseImage(courseId, cancellationToken);
         return result.IsSuccess ? NoContent() : result.ToProblemDetails();
     }
+
+    [HttpGet]
+    [Route("Search")]
+    public async Task<IActionResult> SearchCoursesByName(string searchName, CancellationToken cancellationToken)
+    {
+        var result = await _courseService.SearchCoursesByName(searchName, cancellationToken);
+        return result.IsSuccess ? Ok(result) : result.ToProblemDetails();
+    }
 }
