@@ -25,3 +25,4 @@ global using Microsoft.EntityFrameworkCore.Query;
 global using Microsoft.Extensions.DependencyInjection;
 global using System.Linq.Expressions;
 global using System.Security.Claims;
+global using Application.Abstractions.BlobStorage;

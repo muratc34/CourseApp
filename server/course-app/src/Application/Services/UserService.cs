@@ -8,6 +8,8 @@ public interface IUserService
     Task<Result> DeleteAsync(Guid userId);
     Task<Result> AddRoleToUser(Guid userId, Guid roleId);
     Task<Result> RemoveRoleFromUser(Guid userId, Guid roleId);
+    Task<Result> UpdateUserPicture(Guid userId, string fileExtension, byte[] fileData, CancellationToken cancellationToken);
+    Task<Result> RemoveUserPicture(Guid userId, CancellationToken cancellationToken);
 }
 
 public class UserService : IUserService
@@ -19,6 +21,7 @@ public class UserService : IUserService
     private readonly IJwtProvider _jwtProvider;
     private readonly IRepository<RefreshToken> _refreshTokenRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IBlobStorageService _blobStorageService;
 
     public UserService(
         UserManager<ApplicationUser> userManager,
@@ -27,7 +30,8 @@ public class UserService : IUserService
         IEventPublisher eventPublisher,
         IJwtProvider jwtProvider,
         IRepository<RefreshToken> refreshTokenRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IBlobStorageService blobStorageService)
     {
         _userManager = userManager;
         _roleManager = roleManager;
@@ -36,6 +40,7 @@ public class UserService : IUserService
         _jwtProvider = jwtProvider;
         _unitOfWork = unitOfWork;
         _refreshTokenRepository = refreshTokenRepository;
+        _blobStorageService = blobStorageService;
     }
 
     public async Task<Result<AccessToken>> CreateAsync(UserCreateDto userCreateDto)
@@ -168,6 +173,56 @@ public class UserService : IUserService
                 .ToList();
             return Result.Failure(errors);
         }
+        return Result.Success();
+    }
+
+    public async Task<Result> UpdateUserPicture(Guid userId, string fileExtension, byte[] fileData, CancellationToken cancellationToken)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+        {
+            return Result.Failure<UserDto>(DomainErrors.User.NotFound(userId));
+        }
+        var url = await _blobStorageService.UploadUserImageFileAsync(user.Id, fileExtension, fileData, cancellationToken);
+        user.UpdateUserProfilePictureUrl(url);
+
+        var result = await _userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            var errors = result.Errors
+                .Select(x => DomainErrors.User.CannotUpdate(x.Description))
+                .ToList();
+            return Result.Failure(errors);
+        }
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        return Result.Success();
+    }
+
+    public async Task<Result> RemoveUserPicture(Guid userId, CancellationToken cancellationToken)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+        {
+            return Result.Failure<UserDto>(DomainErrors.User.NotFound(userId));
+        }
+        if (string.IsNullOrEmpty(user.ProfilePictureUrl))
+        {
+            return Result.Failure(DomainErrors.User.ProfilePictureUrlAlreadyDeleted);
+        }
+
+        await _blobStorageService.RemoveUserImageAsync(userId, user.ProfilePictureUrl, cancellationToken);
+        user.UpdateUserProfilePictureUrl(string.Empty);
+
+        var result = await _userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            var errors = result.Errors
+                .Select(x => DomainErrors.User.CannotUpdate(x.Description))
+                .ToList();
+            return Result.Failure(errors);
+        }
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }
 }

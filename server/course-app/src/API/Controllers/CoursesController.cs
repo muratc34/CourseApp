@@ -67,4 +67,28 @@ public class CoursesController : ControllerBase
         var result = await _courseService.GetCoursesByUserId(userId, cancellationToken);
         return result.IsSuccess ? Ok(result) : result.ToProblemDetails();
     }
+
+    [HttpPost]
+    [Route("UploadImage/{courseId}")]
+    [Authorize(Roles = "admin, user")]
+    public async Task<IActionResult> UploadImage(Guid courseId, IFormFile formFile, CancellationToken cancellationToken)
+    {
+        byte[] fileBytes;
+        using (var memoryStream = new MemoryStream())
+        {
+            await formFile.CopyToAsync(memoryStream);
+            fileBytes = memoryStream.ToArray();
+        }
+        var result = await _courseService.UpdateCourseImage(courseId, Path.GetExtension(formFile.FileName), fileBytes, cancellationToken);
+        return result.IsSuccess ? NoContent() : result.ToProblemDetails();
+    }
+
+    [HttpDelete]
+    [Route("UploadImage/{courseId}")]
+    [Authorize(Roles = "admin, user")]
+    public async Task<IActionResult> RemoveImageFile(Guid courseId, CancellationToken cancellationToken)
+    {
+        var result = await _courseService.RemoveCourseImage(courseId, cancellationToken);
+        return result.IsSuccess ? NoContent() : result.ToProblemDetails();
+    }
 }
