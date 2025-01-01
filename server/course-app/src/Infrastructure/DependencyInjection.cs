@@ -42,6 +42,7 @@ public static class DependencyInjection
         services.AddMassTransit(busConfigurator =>
         {
             busConfigurator.AddConsumer<UserCreatedEventConsumer>();
+            busConfigurator.AddConsumer<CoursePurchasedEventConsumer>();
 
             busConfigurator.SetKebabCaseEndpointNameFormatter();
 

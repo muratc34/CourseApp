@@ -1,4 +1,6 @@
-﻿namespace Application.Services;
+﻿using System.Linq;
+
+namespace Application.Services;
 
 public interface IOrderService
 {
@@ -103,7 +105,7 @@ internal class OrderService : IOrderService
                 x.Id,
                 x.CreatedOnUtc,
                 x.ModifiedOnUtc,
-                x.UserId,
+                new UserDto(x.User.Id, x.User.CreatedOnUtc, x.User.FullName, x.User.Email, x.User.UserName, x.User.ProfilePictureUrl),
                 x.Status,
                 x.OrderDetails.Select(oc => new CourseDetailDto(
                     oc.Course.Id,
@@ -151,7 +153,7 @@ internal class OrderService : IOrderService
                 x.Id ,
                 x.CreatedOnUtc, 
                 x.ModifiedOnUtc,
-                x.UserId, 
+                new UserDto(x.User.Id, x.User.CreatedOnUtc, x.User.FullName, x.User.Email, x.User.UserName, x.User.ProfilePictureUrl), 
                 x.Status, 
                 x.OrderDetails.Select(oc => new CourseDetailDto(
                     oc.Course.Id,

@@ -70,7 +70,7 @@ public class CoursesController : ControllerBase
 
     [HttpPost]
     [Route("UploadImage/{courseId}")]
-    [Authorize(Roles = "admin, user")]
+    [Authorize(Roles = "admin, instructor")]
     public async Task<IActionResult> UploadImage(Guid courseId, IFormFile formFile, CancellationToken cancellationToken)
     {
         byte[] fileBytes;
@@ -85,7 +85,7 @@ public class CoursesController : ControllerBase
 
     [HttpDelete]
     [Route("UploadImage/{courseId}")]
-    [Authorize(Roles = "admin, user")]
+    [Authorize(Roles = "admin, instructor")]
     public async Task<IActionResult> RemoveImageFile(Guid courseId, CancellationToken cancellationToken)
     {
         var result = await _courseService.RemoveCourseImage(courseId, cancellationToken);
