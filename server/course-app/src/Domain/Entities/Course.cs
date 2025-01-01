@@ -77,4 +77,9 @@ public class Course : Entity, IAuditableEntity, ISoftDeletableEntity
         }
         Enrollments.Add(enrollment);
     }
+
+    public void UpdateCourseImage(string url)
+    {
+        ImageUrl = url;
+    }
 }

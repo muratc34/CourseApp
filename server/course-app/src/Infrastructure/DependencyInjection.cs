@@ -9,6 +9,7 @@ public static class DependencyInjection
         services.Configure<MailSettings>(configuration.GetSection(MailSettings.SettingsKey));
         services.Configure<MessageBrokerSettings>(configuration.GetSection(MessageBrokerSettings.SettingsKey));
         services.Configure<RedisSettings>(configuration.GetSection(RedisSettings.SettingsKey));
+        services.Configure<BlobSettings>(configuration.GetSection(BlobSettings.SettingsKey));
 
         services.AddDbContext<DatabaseContext>(options =>
         {
@@ -64,10 +65,11 @@ public static class DependencyInjection
         services.AddScoped<IOrderRepository,  OrderRepository>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
 
+
+        services.AddScoped<IBlobStorageService, BlobStorageService>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<IJwtProvider, JwtProvider>();
-        services.AddScoped<ICacheService, CacheService>();
 
         services.AddTransient<IIyzicoService, IyzicoService>(); 
         services.AddTransient<IEmailService, EmailService>();
@@ -75,6 +77,7 @@ public static class DependencyInjection
         services.AddTransient<IEventPublisher, RabbitMQEventPublisher>();
 
         services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(configuration["Redis:Host"]));
+        services.AddSingleton<ICacheService, CacheService>();
 
         services.AddAuthorization();
         return services;
