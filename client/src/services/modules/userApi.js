@@ -3,6 +3,7 @@ import privateClient from '../clients/privateClient';
 
 const registerEndpoint = "/Users/Register";
 const getPutAndDeleteUserEndpoint = (userId) => `/Users/${userId}`;
+const uploadAndRemoveUserImageEndpoint = (userId) => `/Users/UploadImage/${userId}`;
 
 const userApi = {
     register: async(data) => {
@@ -19,6 +20,14 @@ const userApi = {
     },
     getUserById: async(userId) => {
         const response = await publicClient.get(getPutAndDeleteUserEndpoint(userId));
+        return response;
+    },
+    uploadUserImage: async(userId, data) => {
+        const response = await privateClient.post(uploadAndRemoveUserImageEndpoint(userId), data);
+        return response;
+    },
+    removeUserImage: async(userId) => {
+        const response = await privateClient.delete(uploadAndRemoveUserImageEndpoint(userId));
         return response;
     }
 }

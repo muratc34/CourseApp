@@ -43,10 +43,12 @@ public static class DomainErrors
     }
     public static class Order
     {
-        public static Error NotFound => Error.NotFound("Course.NotFound", "The order is not exist.");
+        public static Error NotFound => Error.NotFound("Order.NotFound", "The order is not exist.");
+        public static Error AlreadyOrdered => Error.Conflict("Order.AlreadyOrdered", "The course is already ordered.");
     }
     public static class Payment
     {
         public static Error AlreadyPaid => Error.Failure("Payment.AlreadyPaid", "The order has already been paid for.");
+        public static Error Failed => Error.Failure("Payment.Failed", "The payment failed.");
     }
 }

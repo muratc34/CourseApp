@@ -97,15 +97,15 @@ public static class SeedData
             // Seed Categories
             if (!categoryRepository.FindAll().Any())
             {
-                var category1 = Category.Create("Yazılım ve Teknoloji");
+                var category1 = Category.Create("Software and Technology");
                 category1.Id = new Guid("ce6278d2-40e7-465b-a2ce-da2f0c6b05e2");
-                var category2 = Category.Create("İş ve Yönetim");
+                var category2 = Category.Create("Business and Management");
                 category2.Id = new Guid("b7b6d770-f6cf-4d39-808b-db39b954ab6c");
-                var category3 = Category.Create("Kişisel Gelişim");
+                var category3 = Category.Create("Personal Development");
                 category3.Id = new Guid("7230827c-1d03-4afb-9c8a-fd7976557113");
-                var category4 = Category.Create("Tasarım");
+                var category4 = Category.Create("Design");
                 category4.Id = new Guid("885af5d0-bd08-4f56-8c30-76534ed8509e");
-                var category5 = Category.Create("Dil ve Eğitim");
+                var category5 = Category.Create("Language and Education");
                 category5.Id = new Guid("16e47d6c-3f21-4203-b9bf-e34f7a812d1f");
 
                 await categoryRepository.CreateAsync(category1);

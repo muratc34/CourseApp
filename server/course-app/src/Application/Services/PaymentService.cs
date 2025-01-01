@@ -84,9 +84,15 @@ internal class PaymentService : IPaymentService
     {
         var confirm = await _iyzicoService.ConfirmPayment(token);
         var order = await _orderService.GetOrderById(new Guid(confirm.BasketId));
-        if (order == null)
+        if (order == null || order.Data == null)
         {
             return Result.Failure(DomainErrors.Order.NotFound);
+        }
+        if (confirm.PaymentStatus.Equals(""))
+        {
+            await _orderService.UpdateStatusAsFailed(order.Data.Id);
+            return Result.Failure(DomainErrors.Payment.Failed);
+
         }
         await _orderService.UpdateStatusAsCompleted(order.Data.Id);
 

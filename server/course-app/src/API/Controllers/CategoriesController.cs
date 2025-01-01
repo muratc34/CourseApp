@@ -16,7 +16,7 @@ public class CategoriesController : ControllerBase
     public async Task<IActionResult> Create(CategorySaveDto categoryCreateDto)
     {
         var result = await _categoryService.Create(categoryCreateDto);
-        return result.IsSuccess ? CreatedAtAction(nameof(GetById), new { categoryId = result.Data.Id}, result.Data) : result.ToProblemDetails();
+        return result.IsSuccess ? CreatedAtAction(nameof(GetById), new { categoryId = result.Data.Id}, result) : result.ToProblemDetails();
     }
 
     [HttpPut]

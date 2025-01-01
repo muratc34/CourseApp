@@ -21,9 +21,18 @@ public class PaymentsController : ControllerBase
 
     [HttpPost]
     [Route("Callback")]
-    public async Task<IActionResult> PaymentCallback([FromForm] IFormCollection collection)
+    public IActionResult PaymentCallback([FromForm] IFormCollection collection)
     {
-        await _paymentService.Callback(collection["token"]);
-        return Ok();
+        var token = collection["token"];
+        return Redirect($"http://localhost:5173/payment-result?token={token}");
+    }
+
+    [HttpPost]
+    [Route("CheckoutConfirm")]
+    [Authorize(Roles = "user")]
+    public async Task<IActionResult> PaymentCheckoutConfirm(PaymentConfirm paymentConfirm)
+    {
+        var result = await _paymentService.Callback(paymentConfirm.Token);
+        return result.IsSuccess ? NoContent() : result.ToProblemDetails();
     }
 }

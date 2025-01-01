@@ -16,7 +16,7 @@ public class CoursesController : ControllerBase
     public async Task<IActionResult> Create(CourseCreateDto courseCreateDto)
     {
         var result = await _courseService.Create(courseCreateDto);
-        return result.IsSuccess ? CreatedAtAction(nameof(GetById), new { courseId = result.Data.Id}, result.Data) : result.ToProblemDetails();
+        return result.IsSuccess ? CreatedAtAction(nameof(GetById), new { courseId = result.Data.Id}, result) : result.ToProblemDetails();
     }
 
     [HttpPut]

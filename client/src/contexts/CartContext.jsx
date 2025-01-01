@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 
@@ -13,6 +13,17 @@ export const CartProvider = ({ children }) => {
 
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const storedCart = localStorage.getItem("cart");
+    if (storedCart) {
+      setCart(JSON.parse(storedCart));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("cart", JSON.stringify(cart));
+  }, [cart]);
 
   const addToCart = (course) => {
     if (!user) {
@@ -65,7 +76,7 @@ export const CartProvider = ({ children }) => {
     if (cart.length > 0) {
       setPurchasedItems((prev) => [...prev, ...cart]);
       setCart([]);
-    } 
+    }
   };
 
   return (

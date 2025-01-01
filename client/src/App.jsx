@@ -15,11 +15,13 @@ import Profile from './pages/Profile'
 import InstructorRoute from './configs/InstructorRoute'
 import { CartProvider } from './contexts/CartContext'
 import Payment from './pages/Payment'
+import Footer from './components/Footer'
+import PaymentCallback from './pages/PaymentCallback'
 
 const App = () => {
 
   return (
-    <div className="bg-slate-50 min-h-screen">
+    <div className="bg-slate-50 min-h-screen flex flex-col justify-between">
       <Router>
         <CartProvider>
         <Navbar/>
@@ -34,12 +36,14 @@ const App = () => {
             <Route path='/basket' element={<Order/>}/>
             <Route path='/basket/:id' element={<Payment/>}/>
             <Route path='/profile/:id' element={<Profile/>}/>
+            <Route path="/payment-result" element={<PaymentCallback/>} />
           </Route>
           <Route element={<InstructorRoute/>}>
             <Route path='/create-course' element={<CreateCourse/>}/>
           </Route>
           <Route path="*" element={<Home/>} />
         </Routes>
+        <Footer/>
         </CartProvider>
       </Router>
     </div>

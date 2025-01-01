@@ -2,20 +2,25 @@ import React, { useEffect, useState } from "react";
 import CourseCard from "../components/CourseCard";
 import courseApi from "../services/modules/courseApi";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { Link } from "react-router-dom";
 
 const Home = () => {
-  const [courses, setCourses] = useState(null)
+  const [courses, setCourses] = useState([])
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    courseApi.getCourses()
-    .then(response => {
-      setCourses(response.data)
-      setIsLoading(false)
-    }).catch(error => {
-      console.error(error);
-    })
+    courseApi
+      .getCourses(2, 4)
+      .then((response) => {
+        setCourses(response.data.items);
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        console.error(error);
+        setIsLoading(false);
+      });
   }, [])
+
 
   if(isLoading)
   {
@@ -42,7 +47,8 @@ const Home = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {courses.map((course) => (
             <CourseCard key={course.id} course={course}/>
-          ))}
+          ))
+          }
         </div>
       </section>
 
@@ -53,9 +59,9 @@ const Home = () => {
           Sign up now and access our wide range of courses and learning
           resources.
         </p>
-        <button className="bg-white text-indigo-600 py-2 px-6 rounded-full hover:bg-gray-200 transition duration-300">
+        <Link to={"/register"} className="bg-white text-indigo-600 py-2 px-6 rounded-full hover:bg-gray-200 transition duration-300">
           Sign Up
-        </button>
+        </Link>
       </section>
     </div>
   );

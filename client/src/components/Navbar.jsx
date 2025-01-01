@@ -4,6 +4,7 @@ import { MdMenu, MdClose } from "react-icons/md";
 import { CiSearch } from "react-icons/ci";
 import { PiShoppingCartSimpleThin } from "react-icons/pi";
 import { useAuth } from "../contexts/AuthContext";
+import { useCart } from "../contexts/CartContext";
 import defaultUserPic from "/src/assets/default-user.png";
 
 const Navbar = () => {
@@ -11,7 +12,8 @@ const Navbar = () => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   const { user, logout } = useAuth();
-  console.log(user)
+  const { cart } = useCart();
+
   const navItems = [
     { id: 1, title: "Home", path: "/" },
     { id: 2, title: "Courses", path: "/courses" },
@@ -21,6 +23,8 @@ const Navbar = () => {
     { id: 1, title: "Profile", path: `/profile/${user?.id}` },
     { id: 2, title: "My Courses", path: `/profile/${user?.id}/courses` },
   ];
+
+  const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
 
   return (
     <nav className="items-center py-8 bg-white shadow-md">
@@ -74,9 +78,12 @@ const Navbar = () => {
               to={"/basket"}
               className="relative rounded-full p-1 hover:text-indigo-600"
             >
-              <PiShoppingCartSimpleThin
-                size={32}
-              />
+              <PiShoppingCartSimpleThin size={32} />
+              {cartItemCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full text-xs font-bold w-5 h-5 flex items-center justify-center">
+                  {cartItemCount}
+                </span>
+              )}
             </Link>
             <div className="relative ml-3">
               <div>
@@ -173,6 +180,11 @@ const Navbar = () => {
                 </div>
                 <Link to={"/basket"} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="relative flex items-center rounded-full p-1 hover:text-indigo-600">
                     <PiShoppingCartSimpleThin size={32}/>
+                    {cartItemCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full text-xs font-bold w-5 h-5 flex items-center justify-center">
+                      {cartItemCount}
+                    </span>
+                  )}
                 </Link>
               </div>
               {profileNavItems.map((item) => (

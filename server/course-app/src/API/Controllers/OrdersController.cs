@@ -16,7 +16,7 @@
         public async Task<IActionResult> Create(OrderCreateDto orderCreateDto)
         {
             var result = await _orderService.Create(orderCreateDto);
-            return result.IsSuccess ? CreatedAtAction(nameof(GetById), new { orderId = result.Data.Id }, result.Data) : result.ToProblemDetails();
+            return result.IsSuccess ? CreatedAtAction(nameof(GetById), new { orderId = result.Data.Id }, result) : result.ToProblemDetails();
         }
 
         [HttpDelete]

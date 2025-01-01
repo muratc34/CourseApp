@@ -24,7 +24,7 @@
         public async Task<IActionResult> Create(RoleSaveDto dto)
         {
             var result = await _roleService.CreateRole(dto);
-            return result.IsSuccess ? CreatedAtAction(nameof(GetById), new { roleId = result.Data.Id }, result.Data) : result.ToProblemDetails();
+            return result.IsSuccess ? CreatedAtAction(nameof(GetById), new { roleId = result.Data.Id }, result) : result.ToProblemDetails();
         }
 
         [HttpDelete]

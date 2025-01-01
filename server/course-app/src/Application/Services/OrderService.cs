@@ -10,6 +10,7 @@ public interface IOrderService
     Task<Result<PagedList<OrderDetailDto>>> GetOrdersByUserId(Guid userId, int pageIndex, int pageSize, CancellationToken cancellationToken);
     Task<Result<OrderDetailDto>> GetOrderById(Guid orderId);
     Task<Result> UpdateStatusAsCompleted(Guid orderId);
+    Task<Result> UpdateStatusAsFailed(Guid orderId);
 }
 internal class OrderService : IOrderService
 {
@@ -66,6 +67,14 @@ internal class OrderService : IOrderService
             {
                 return Result.Failure<OrderDto>(DomainErrors.User.AlreadyEnrollment);
             }
+            var hasPreviousOrder = await _orderRepository.FindAll()
+                .Where(x => x.UserId == user.Id && (x.Status != OrderStatuses.Cancelled || x.Status != OrderStatuses.Failed || x.Status != OrderStatuses.Refunded))
+                .AnyAsync(x => x.OrderDetails.Any(o => o.CourseId == courseId));
+            if (hasPreviousOrder)
+            {
+                return Result.Failure<OrderDto>(DomainErrors.Order.AlreadyOrdered);
+            }
+
             order.OrderDetails.Add(new OrderDetail(courseId, order.Id));
         }
 
@@ -200,6 +209,22 @@ internal class OrderService : IOrderService
         }
 
         order.SetStatusAsCompleted();
+        await _unitOfWork.SaveChangesAsync();
+
+        await _cacheService.RemoveAsync(CachingKeys.OrdersByUserIdRemoveKey(order.UserId));
+        await _cacheService.RemoveAsync(CachingKeys.OrdersByIdKey(order.Id));
+        return Result.Success();
+    }
+
+    public async Task<Result> UpdateStatusAsFailed(Guid orderId)
+    {
+        var order = await _orderRepository.GetAsync(x => x.Id == orderId);
+        if (order is null)
+        {
+            return Result.Failure(DomainErrors.Order.NotFound);
+        }
+
+        order.SetStatusAsFailed();
         await _unitOfWork.SaveChangesAsync();
 
         await _cacheService.RemoveAsync(CachingKeys.OrdersByUserIdRemoveKey(order.UserId));
