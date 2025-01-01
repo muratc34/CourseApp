@@ -24,7 +24,7 @@ const CourseDetail = () => {
         console.error(error);
         setIsLoading(false);
       });
-  }, []);
+  }, [id]);
 
   if (isLoading) {
     return <LoadingSpinner />;

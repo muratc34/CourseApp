@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { MdMenu, MdClose } from "react-icons/md";
-import { CiSearch } from "react-icons/ci";
 import { PiShoppingCartSimpleThin } from "react-icons/pi";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
 import defaultUserPic from "/src/assets/default-user.png";
+import Search from "./Search";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -35,14 +35,7 @@ const Navbar = () => {
           </Link>
         </div>
         <div className="flex-grow justify-center md:flex hidden">
-          <div className="relative w-full max-w-md">
-            <input
-              type="text"
-              placeholder="Search"
-              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600"
-            />
-            <CiSearch className="absolute top-2 left-3 text-2xl text-gray-600" />
-          </div>
+          <Search />
         </div>
         <button
           className="text-gray-600 xl:hidden block"
@@ -145,6 +138,7 @@ const Navbar = () => {
       {isMobileMenuOpen && (
         <div className="container relative top-0 left-0 w-full h-screen bg-white z-50 p-6 flex flex-col xl:hidden block mx-auto">
           <ul className="flex flex-col items-start gap-6 text-gray-600 mb-4">
+            <Search className="max-w-full md:hidden"/>
             {navItems.map((item) => (
               <li key={item.id} className="w-full">
                 <Link
@@ -178,9 +172,13 @@ const Navbar = () => {
                     <p className="text-sm text-gray-600">{user.email}</p>
                   </div>
                 </div>
-                <Link to={"/basket"} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="relative flex items-center rounded-full p-1 hover:text-indigo-600">
-                    <PiShoppingCartSimpleThin size={32}/>
-                    {cartItemCount > 0 && (
+                <Link
+                  to={"/basket"}
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="relative flex items-center rounded-full p-1 hover:text-indigo-600"
+                >
+                  <PiShoppingCartSimpleThin size={32} />
+                  {cartItemCount > 0 && (
                     <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full text-xs font-bold w-5 h-5 flex items-center justify-center">
                       {cartItemCount}
                     </span>

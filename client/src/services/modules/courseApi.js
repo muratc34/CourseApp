@@ -6,7 +6,8 @@ const getEndpoint = (pageIndex, pageSize) => `/Courses?pageIndex=${pageIndex}&pa
 const getUpdateAndDeleteCourseEndpoint = (courseId) => `/Courses/${courseId}`;
 const getCoursesByCategoryIdEndpoint = (categoryId) => `/Courses/Categories/${categoryId}`;
 const getUserCoursesByUserIdEndpoint = (userId) => `/Courses/Users/${userId}`;
-const uploadAndRemoveCourseImageEndpoint = (courseId) => `/Courses/UploadImage/${userId}`;
+const uploadAndRemoveCourseImageEndpoint = (courseId) => `/Courses/UploadImage/${courseId}`;
+const searchCourseByNameEndpoint = (searchName) => `/Courses/Search?searchName=${searchName}`
 
 const courseApi = {
     createCourse: async(data) => {
@@ -43,6 +44,10 @@ const courseApi = {
     },
     removeCourseImage: async(courseId) => {
         const response = await privateClient.delete(uploadAndRemoveCourseImageEndpoint(courseId));
+        return response;
+    },
+    searchCourseByName: async(searchName) =>{
+        const response = await publicClient.get(searchCourseByNameEndpoint(searchName));
         return response;
     }
 }
