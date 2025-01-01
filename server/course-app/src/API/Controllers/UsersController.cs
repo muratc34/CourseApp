@@ -65,7 +65,8 @@ public class UsersController : ControllerBase
 
     [HttpPost]
     [Route("UploadImage/{userId}")]
-    public async Task<IActionResult> UploadFile(Guid userId, IFormFile formFile, CancellationToken cancellationToken)
+    [Authorize("user")]
+    public async Task<IActionResult> UploadImageFile(Guid userId, IFormFile formFile, CancellationToken cancellationToken)
     {
         byte[] fileBytes;
         using (var memoryStream = new MemoryStream())
@@ -74,6 +75,15 @@ public class UsersController : ControllerBase
             fileBytes = memoryStream.ToArray();
         }
         var result = await _userService.UpdateUserPicture(userId, Path.GetExtension(formFile.FileName), fileBytes, cancellationToken);
+        return result.IsSuccess ? NoContent() : result.ToProblemDetails();
+    }
+
+    [HttpDelete]
+    [Route("UploadImage/{userId}")]
+    [Authorize("user")]
+    public async Task<IActionResult> RemoveImageFile(Guid userId, CancellationToken cancellationToken)
+    {
+        var result = await _userService.RemoveUserPicture(userId, cancellationToken);
         return result.IsSuccess ? NoContent() : result.ToProblemDetails();
     }
 }

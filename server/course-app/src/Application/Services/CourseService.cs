@@ -9,6 +9,8 @@ public interface ICourseService
     Task<Result<List<CourseDetailDto>>> GetCourseByCategoryId(Guid categoryId, CancellationToken cancellationToken);
     Task<Result> RegisterUserToCourse(Guid courseId, Guid userId);
     Task<Result<List<UserCoursesDetailDto>>> GetCoursesByUserId(Guid userId, CancellationToken cancellationToken);
+    Task<Result> UpdateCourseImage(Guid courseId, string fileExtension, byte[] fileData, CancellationToken cancellationToken);
+    Task<Result> RemoveCourseImage(Guid courseId, CancellationToken cancellationToken);
 }
 
 public class CourseService : ICourseService
@@ -20,6 +22,7 @@ public class CourseService : ICourseService
     private readonly IValidator<CourseCreateDto> _courseCreateDtoValidator;
     private readonly IValidator<CourseUpdateDto> _courseUpdateDtoValidator;
     private readonly ICacheService _cacheService;
+    private readonly IBlobStorageService _blobStorageService;
 
     public CourseService(
         ICourseRepository courseRepository,
@@ -28,7 +31,8 @@ public class CourseService : ICourseService
         UserManager<ApplicationUser> userManager,
         IValidator<CourseCreateDto> courseCreateDtoValidator,
         IValidator<CourseUpdateDto> courseUpdateDtoValidator,
-        ICacheService cacheService)
+        ICacheService cacheService,
+        IBlobStorageService blobStorageService)
     {
         _courseRepository = courseRepository;
         _unitOfWork = unitOfWork;
@@ -37,6 +41,7 @@ public class CourseService : ICourseService
         _courseCreateDtoValidator = courseCreateDtoValidator;
         _courseUpdateDtoValidator = courseUpdateDtoValidator;
         _cacheService = cacheService;
+        _blobStorageService = blobStorageService;
     }
 
     public async Task<Result<CourseDto>> Create(CourseCreateDto courseCreateDto)
@@ -308,5 +313,37 @@ public class CourseService : ICourseService
 
         await _cacheService.SetAsync(CachingKeys.UserCoursesByUserIdKey(userId), user, TimeSpan.FromMinutes(60));
         return Result.Success(user);
+    }
+
+    public async Task<Result> UpdateCourseImage(Guid courseId, string fileExtension, byte[] fileData, CancellationToken cancellationToken)
+    {
+        var course = await _courseRepository.GetAsync(x => x.Id == courseId);
+        if (course is null)
+        {
+            return Result.Failure(DomainErrors.Course.NotFound);
+        }
+        var url = await _blobStorageService.UploadCourseImageFileAsync(course.InstructorId, courseId, fileExtension, fileData, cancellationToken);
+        course.UpdateCourseImage(url);
+        _courseRepository.Update(course);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        return Result.Success();
+    }
+
+    public async Task<Result> RemoveCourseImage(Guid courseId, CancellationToken cancellationToken)
+    {
+        var course = await _courseRepository.GetAsync(x => x.Id == courseId);
+        if (course is null)
+        {
+            return Result.Failure(DomainErrors.Course.NotFound);
+        }
+        if (string.IsNullOrEmpty(course.ImageUrl))
+        {
+            return Result.Failure(DomainErrors.Course.ImageUrlAlreadyDeleted);
+        }
+        await _blobStorageService.RemoveCourseImageAsync(courseId, course.ImageUrl, cancellationToken);
+        course.UpdateCourseImage(string.Empty);
+        _courseRepository.Update(course);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        return Result.Success();
     }
 }

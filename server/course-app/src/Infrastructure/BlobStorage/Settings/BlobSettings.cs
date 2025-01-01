@@ -8,5 +8,6 @@ public class BlobSettings
     public string SecretKey { get; set; }
     public string CourseImgsBucketName { get; set; }
     public string UserImgsBucketName { get; set; }
-    public string PublicUrl { get; set; }
+    public string PublicCourseUrl { get; set; }
+    public string PublicUserUrl { get; set; }
 }

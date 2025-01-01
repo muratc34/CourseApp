@@ -1,6 +1,4 @@
-﻿using Application.Abstractions.BlobStorage;
-
-namespace Application.Services;
+﻿namespace Application.Services;
 
 public interface IUserService
 {
@@ -11,6 +9,7 @@ public interface IUserService
     Task<Result> AddRoleToUser(Guid userId, Guid roleId);
     Task<Result> RemoveRoleFromUser(Guid userId, Guid roleId);
     Task<Result> UpdateUserPicture(Guid userId, string fileExtension, byte[] fileData, CancellationToken cancellationToken);
+    Task<Result> RemoveUserPicture(Guid userId, CancellationToken cancellationToken);
 }
 
 public class UserService : IUserService
@@ -186,7 +185,43 @@ public class UserService : IUserService
         }
         var url = await _blobStorageService.UploadUserImageFileAsync(user.Id, fileExtension, fileData, cancellationToken);
         user.UpdateUserProfilePictureUrl(url);
-        await _userManager.UpdateAsync(user);   
+
+        var result = await _userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            var errors = result.Errors
+                .Select(x => DomainErrors.User.CannotUpdate(x.Description))
+                .ToList();
+            return Result.Failure(errors);
+        }
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        return Result.Success();
+    }
+
+    public async Task<Result> RemoveUserPicture(Guid userId, CancellationToken cancellationToken)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+        {
+            return Result.Failure<UserDto>(DomainErrors.User.NotFound(userId));
+        }
+        if (string.IsNullOrEmpty(user.ProfilePictureUrl))
+        {
+            return Result.Failure(DomainErrors.User.ProfilePictureUrlAlreadyDeleted);
+        }
+
+        await _blobStorageService.RemoveUserImageAsync(userId, user.ProfilePictureUrl, cancellationToken);
+        user.UpdateUserProfilePictureUrl(string.Empty);
+
+        var result = await _userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            var errors = result.Errors
+                .Select(x => DomainErrors.User.CannotUpdate(x.Description))
+                .ToList();
+            return Result.Failure(errors);
+        }
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }
