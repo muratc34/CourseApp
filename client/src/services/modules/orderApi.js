@@ -2,7 +2,7 @@ import privateClient from '../clients/privateClient';
 
 const createOrderEndpoint = "/Orders";
 const getAndDeleteOrderEndpoint = (orderId) => `/Orders/${orderId}`;
-const getOrderByUserEndpoint = (userId) =>`/Orders/Users/${userId}`;
+const getOrderByUserEndpoint = (userId, pageIndex, pageSize) =>`/Orders/Users/${userId}?pageIndex=${pageIndex}&pageSize=${pageSize}`;
 
 const orderApi = {
     createOrder: async(data) =>{
@@ -17,8 +17,8 @@ const orderApi = {
         const response = await privateClient.get(getAndDeleteOrderEndpoint(orderId));
         return response;
     },
-    getOrdersByUserId: async(userId) => {
-        const response = await privateClient.get(getOrderByUserEndpoint(userId));
+    getOrdersByUserId: async(userId, pageIndex = 1, pageSize = 12) => {
+        const response = await privateClient.get(getOrderByUserEndpoint(userId, pageIndex, pageSize));
         return response;
     } 
 }

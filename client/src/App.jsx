@@ -35,7 +35,7 @@ const App = () => {
           <Route element={<ProtectedRoute/>}>
             <Route path='/basket' element={<Order/>}/>
             <Route path='/basket/:id' element={<Payment/>}/>
-            <Route path='/profile/:id' element={<Profile/>}/>
+            <Route path='/profile' element={<Profile/>}/>
             <Route path="/payment-result" element={<PaymentCallback/>} />
           </Route>
           <Route element={<InstructorRoute/>}>

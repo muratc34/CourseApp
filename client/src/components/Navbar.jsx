@@ -20,8 +20,7 @@ const Navbar = () => {
   ];
 
   const profileNavItems = [
-    { id: 1, title: "Profile", path: `/profile/${user?.id}` },
-    { id: 2, title: "My Courses", path: `/profile/${user?.id}/courses` },
+    { id: 1, title: "Profile", path: `/profile` }
   ];
 
   const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);

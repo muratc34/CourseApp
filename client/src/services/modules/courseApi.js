@@ -4,7 +4,7 @@ import privateClient from '../clients/privateClient';
 const createEndpoint = "/Courses";
 const getEndpoint = (pageIndex, pageSize) => `/Courses?pageIndex=${pageIndex}&pageSize=${pageSize}`;
 const getUpdateAndDeleteCourseEndpoint = (courseId) => `/Courses/${courseId}`;
-const getCoursesByCategoryIdEndpoint = (categoryId) => `/Courses/Categories/${categoryId}`;
+const getCoursesByCategoryIdEndpoint = (categoryId, pageIndex, pageSize) => `/Courses/Categories/${categoryId}?pageIndex=${pageIndex}&pageSize=${pageSize}`;
 const getUserCoursesByUserIdEndpoint = (userId) => `/Courses/Users/${userId}`;
 const uploadAndRemoveCourseImageEndpoint = (courseId) => `/Courses/UploadImage/${courseId}`;
 const searchCourseByNameEndpoint = (searchName) => `/Courses/Search?searchName=${searchName}`
@@ -30,8 +30,8 @@ const courseApi = {
         const response = await publicClient.get(getUpdateAndDeleteCourseEndpoint(courseId));
         return response;
     },
-    getCoursesByCategoryId: async(categoryId) => {
-        const response = await publicClient.get(getCoursesByCategoryIdEndpoint(categoryId));
+    getCoursesByCategoryId: async(categoryId, pageIndex = 1, pageSize = 12) => {
+        const response = await publicClient.get(getCoursesByCategoryIdEndpoint(categoryId, pageIndex, pageSize));
         return response;
     },
     getUserCoursesByUserId: async(userId) => {
