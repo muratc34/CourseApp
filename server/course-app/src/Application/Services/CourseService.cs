@@ -10,7 +10,7 @@ public interface ICourseService
     Task<Result<CourseDetailDto>> GetCourseById(Guid courseId);
     Task<Result<PagedList<CourseDetailDto>>> GetCourseByCategoryId(Guid categoryId, int pageIndex, int pageSize, CancellationToken cancellationToken);
     Task<Result> RegisterUserToCourse(Guid courseId, Guid userId);
-    Task<Result<PagedList<UserCoursesDetailDto>>> GetCoursesByUserId(Guid userId, int pageIndex, int pageSize, CancellationToken cancellationToken);
+    Task<Result<PagedList<CourseDetailDto>>> GetCoursesByUserId(Guid userId, int pageIndex, int pageSize, CancellationToken cancellationToken);
     Task<Result> UpdateCourseImage(Guid courseId, string fileExtension, byte[] fileData, CancellationToken cancellationToken);
     Task<Result> RemoveCourseImage(Guid courseId, CancellationToken cancellationToken);
     Task<Result<List<CourseDetailDto>>> SearchCoursesByName(string searchName, CancellationToken cancellationToken); 
@@ -267,51 +267,18 @@ public class CourseService : ICourseService
         return Result.Success();
     }
 
-    public async Task<Result<PagedList<UserCoursesDetailDto>>> GetCoursesByUserId(Guid userId, int pageIndex, int pageSize, CancellationToken cancellationToken)
+    public async Task<Result<PagedList<CourseDetailDto>>> GetCoursesByUserId(Guid userId, int pageIndex, int pageSize, CancellationToken cancellationToken)
     {
-        var cachedCourses = await _cacheService.GetAsync<PagedList<UserCoursesDetailDto>>(CachingKeys.UserCoursesByUserIdKey(userId, pageIndex, pageSize));
+        var cachedCourses = await _cacheService.GetAsync<PagedList<CourseDetailDto>>(CachingKeys.UserCoursesByUserIdKey(userId, pageIndex, pageSize));
         if (cachedCourses is not null)
         {
             return Result.Success(cachedCourses);
         }
 
-        var userCourses = await _userManager.Users
-            .Where(x => x.Id == userId)
-            .Select(user =>
-                new UserCoursesDetailDto(
-                    user.Id,
-                    user.CreatedOnUtc,
-                    user.FullName,
-                    user.Email,
-                    user.UserName,
-                    user.ProfilePictureUrl,
-                    user.Enrollments.Select(x =>
-                        new CourseDetailDto(
-                            x.Course.Id,
-                            x.Course.CreatedOnUtc,
-                            x.Course.ModifiedOnUtc,
-                            x.Course.Name,
-                            x.Course.Description,
-                            x.Course.Price,
-                            x.Course.ImageUrl,
-                            new CategoryDto(
-                                x.Course.Category.Id,
-                                x.Course.Category.CreatedOnUtc,
-                                x.Course.ModifiedOnUtc,
-                                x.Course.Name
-                            ),
-                            new UserDto(
-                                x.Course.Instructor.Id,
-                                x.Course.Instructor.CreatedOnUtc,
-                                x.Course.Instructor.FullName,
-                                x.Course.Instructor.Email,
-                                x.Course.Instructor.UserName,
-                                x.Course.Instructor.ProfilePictureUrl
-                            )
-                        )
-                ).ToList())).ToListAsync(cancellationToken);
-
-        var pagedUserCourses = new PagedList<UserCoursesDetailDto>(userCourses, pageIndex, pageSize, userCourses.Count);
+        var pagedUserCourses = await _courseRepository.GetAllByPagingAsync(pageIndex, pageSize, cancellationToken, x => new CourseDetailDto(x.Id, x.CreatedOnUtc, x.ModifiedOnUtc, x.Name, x.Description, x.Price, x.ImageUrl,
+                new CategoryDto(x.Category.Id, x.Category.CreatedOnUtc, x.ModifiedOnUtc, x.Name),
+                new UserDto(x.Instructor.Id, x.Instructor.CreatedOnUtc, x.Instructor.FullName, x.Instructor.Email, x.Instructor.UserName, x.Instructor.ProfilePictureUrl)
+            ), c => c.Enrollments.Any(e => e.UserId == userId));
 
         await _cacheService.SetAsync(CachingKeys.UserCoursesByUserIdKey(userId, pageIndex, pageSize), pagedUserCourses, TimeSpan.FromMinutes(60));
         return Result.Success(pagedUserCourses);

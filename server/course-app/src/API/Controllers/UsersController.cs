@@ -29,7 +29,7 @@ public class UsersController : ControllerBase
 
     [HttpPut]
     [Route("{userId}")]
-    [Authorize("user")]
+    [Authorize(Roles = "user")]
     public async Task<IActionResult> UpdateUser(Guid userId, UserUpdateDto userUpdateDto)
     {
         var result = await _userService.UpdateAsync(userId, userUpdateDto);
@@ -38,7 +38,7 @@ public class UsersController : ControllerBase
 
     [HttpDelete]
     [Route("{userId}")]
-    [Authorize("admin,user")]
+    [Authorize(Roles = "admin,user")]
     public async Task<IActionResult> DeleteUser(Guid userId)
     {
         var result = await _userService.DeleteAsync(userId);
@@ -47,7 +47,7 @@ public class UsersController : ControllerBase
 
     [HttpPut]
     [Route("{userId}/role/{roleId}")]
-    [Authorize("admin")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> AddRoleToUser(Guid userId, Guid roleId)
     {
         var result = await _userService.AddRoleToUser(userId, roleId);
@@ -65,7 +65,7 @@ public class UsersController : ControllerBase
 
     [HttpPost]
     [Route("UploadImage/{userId}")]
-    [Authorize("user")]
+    [Authorize(Roles = "user")]
     public async Task<IActionResult> UploadImageFile(Guid userId, IFormFile formFile, CancellationToken cancellationToken)
     {
         byte[] fileBytes;
@@ -80,7 +80,7 @@ public class UsersController : ControllerBase
 
     [HttpDelete]
     [Route("UploadImage/{userId}")]
-    [Authorize("user")]
+    [Authorize(Roles = "user")]
     public async Task<IActionResult> RemoveImageFile(Guid userId, CancellationToken cancellationToken)
     {
         var result = await _userService.RemoveUserPicture(userId, cancellationToken);

@@ -2,7 +2,7 @@
 
 public class ApplicationUser : IdentityUser<Guid>, IAuditableEntity
 {
-    public ApplicationUser(string firstName, string lastName, string email, string userName, string? profilePictureUrl) : base()
+    public ApplicationUser(string firstName, string lastName, string email, string userName) : base()
     {
         Ensure.NotEmpty(firstName, "The first name is required.", nameof(firstName));
         Ensure.NotEmpty(lastName, "The first name is required.", nameof(firstName));
@@ -13,7 +13,6 @@ public class ApplicationUser : IdentityUser<Guid>, IAuditableEntity
         LastName = lastName;
         Email = email;
         UserName = userName;
-        ProfilePictureUrl = profilePictureUrl;
     }
 
     public long CreatedOnUtc { get; }
@@ -28,12 +27,12 @@ public class ApplicationUser : IdentityUser<Guid>, IAuditableEntity
     public virtual ICollection<Course>? CoursesCreated { get; private set; }
     public virtual ICollection<Enrollment>? Enrollments { get; private set; }
 
-    public static ApplicationUser Create(string firstName, string lastName, string email, string userName, string? profilePictureUrl)
+    public static ApplicationUser Create(string firstName, string lastName, string email, string userName)
     {
-        return new ApplicationUser(firstName, lastName, email, userName, profilePictureUrl);
+        return new ApplicationUser(firstName, lastName, email, userName);
     }
 
-    public ApplicationUser Update(string? firstName, string? lastName, string? email, string? userName, string? profilePictureUrl)
+    public ApplicationUser Update(string? firstName, string? lastName, string? email, string? userName)
     {
         if (!string.IsNullOrWhiteSpace(firstName))
         {
@@ -41,19 +40,15 @@ public class ApplicationUser : IdentityUser<Guid>, IAuditableEntity
         }
         if (!string.IsNullOrWhiteSpace(lastName))
         {
-            FirstName = lastName;
+            LastName = lastName;
         }
         if (!string.IsNullOrWhiteSpace(email))
         {
-            FirstName = email;
+            Email = email;
         }
         if (!string.IsNullOrWhiteSpace(userName))
         {
-            FirstName = userName;
-        }
-        if (profilePictureUrl != null)
-        {
-            ProfilePictureUrl = profilePictureUrl;
+            UserName = userName;
         }
         return this;
     }

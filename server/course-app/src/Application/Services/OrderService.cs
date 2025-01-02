@@ -1,5 +1,4 @@
 ﻿using Domain.Core.Pagination;
-using System.Linq;
 
 namespace Application.Services;
 
@@ -142,8 +141,9 @@ internal class OrderService : IOrderService
                 x.Country,
                 x.Address,
                 x.ZipCode,
-                x.TcNo
-            ),x => x.UserId == userId);
+                x.TcNo,
+                x.OrderDetails.Sum(od => od.Course.Price)
+            ),x => x.UserId == userId, x => x.OrderByDescending(o => o.CreatedOnUtc));
         
 
         await _cacheService.SetAsync(CachingKeys.OrdersByUserIdKey(userId, pageIndex, pageSize), pagedOrders, TimeSpan.FromMinutes(60));
@@ -190,7 +190,8 @@ internal class OrderService : IOrderService
                 x.Country,
                 x.Address,
                 x.ZipCode,
-                x.TcNo)).FirstAsync();
+                x.TcNo,
+                x.OrderDetails.Sum(od => od.Course.Price))).FirstAsync();
 
         if (order is null)
         {

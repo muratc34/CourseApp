@@ -45,7 +45,7 @@ public static class SeedData
                 var password = "Test*123";
                 if (await userManager.FindByEmailAsync("admin@admin.com") == null)
                 {
-                    var admin = ApplicationUser.Create("System", "Administrator", "admin@admin.com", "admin", null);
+                    var admin = ApplicationUser.Create("System", "Administrator", "admin@admin.com", "admin");
                     admin.EmailConfirmed = true;
                     admin.Id = new Guid("7608d5cf-cbca-4730-a1ee-6cdfbe64c053");
                     var result = await userManager.CreateAsync(admin, password);
@@ -59,7 +59,7 @@ public static class SeedData
                 }
                 if (await userManager.FindByEmailAsync("murat@test.com") == null)
                 {
-                    var user = ApplicationUser.Create("Murat", "Cinek", "murat@test.com", "muratcinek", null);
+                    var user = ApplicationUser.Create("Murat", "Cinek", "murat@test.com", "muratcinek");
                     user.EmailConfirmed = true;
                     user.Id = new Guid("00859d34-c5c1-45f5-9573-b7ec668471ce");
                     var result = await userManager.CreateAsync(user, password);
@@ -70,7 +70,7 @@ public static class SeedData
                 }
                 if (await userManager.FindByEmailAsync("fatih@test.com") == null)
                 {
-                    var instructor1 = ApplicationUser.Create("Fatih", "Çakıroğlu", "fatih@test.com", "instructor1", null);
+                    var instructor1 = ApplicationUser.Create("Fatih", "Çakıroğlu", "fatih@test.com", "instructor1");
                     instructor1.EmailConfirmed = true;
                     instructor1.Id = new Guid("2c54db2f-22bf-43b2-8ed0-296ee57b5500");
                     var result = await userManager.CreateAsync(instructor1, password);
@@ -82,7 +82,7 @@ public static class SeedData
                 }
                 if (await userManager.FindByEmailAsync("ahmet@test.com") == null)
                 {
-                    var instructor2 = ApplicationUser.Create("Ahmet", "Kaya", "ahmet@test.com", "instructor2", null);
+                    var instructor2 = ApplicationUser.Create("Ahmet", "Kaya", "ahmet@test.com", "instructor2");
                     instructor2.EmailConfirmed = true;
                     instructor2.Id = new Guid("cdd009df-15dc-4a0b-8cb3-4dc7a723f348");
                     var result = await userManager.CreateAsync(instructor2, password);

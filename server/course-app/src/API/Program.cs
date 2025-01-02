@@ -57,13 +57,13 @@ app.UseHttpsRedirection();
 
 app.UseSerilogRequestLogging();
 
+app.UseCors();
+
 app.UseAuthentication();
 
 app.UseAuthorization();
 
 app.MapControllers();
-
-app.UseCors();
 
 await app.Seed();
 

@@ -3,8 +3,7 @@
 public static class CachingKeys
 {
     public static string EmailVerificationKey(Guid userId) => $"emailverification:{userId}";
-    public static string CategoriesKey(int pageIndex, int pageSize) => $"categories:{pageIndex}:{pageSize}";
-    public static string CategoriesRemoveKey => $"categories:*";
+    public static string CategoriesKey => $"categories";
     public static string CategoryByIdKey(Guid categoryId) => $"category:{categoryId}";
     public static string CoursesKey(int pageIndex, int pageSize) => $"courses:{pageIndex}:{pageSize}";
     public static string CoursesRemoveKey => $"courses:*";

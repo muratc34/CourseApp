@@ -52,7 +52,7 @@ public class UserService : IUserService
             return Result.Failure<AccessToken>(errors);
         }
 
-        var user = ApplicationUser.Create(userCreateDto.FirstName, userCreateDto.LastName, userCreateDto.Email, userCreateDto.UserName, userCreateDto.ProfilePictureUrl);
+        var user = ApplicationUser.Create(userCreateDto.FirstName, userCreateDto.LastName, userCreateDto.Email, userCreateDto.UserName);
         var result = await _userManager.CreateAsync(user, userCreateDto.Password);
 
         if(!result.Succeeded)
@@ -100,7 +100,7 @@ public class UserService : IUserService
         {
             return Result.Failure<UserDto>(DomainErrors.User.NotFound(userId));
         }
-        user.Update(userUpdateDto.FirstName,userUpdateDto.LastName, userUpdateDto.Email, userUpdateDto.UserName, userUpdateDto.ProfilePictureUrl);
+        user.Update(userUpdateDto.FirstName,userUpdateDto.LastName, userUpdateDto.Email, userUpdateDto.UserName);
         var result = await _userManager.UpdateAsync(user);
         if (!result.Succeeded)
         {
