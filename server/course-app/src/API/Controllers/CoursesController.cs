@@ -62,9 +62,17 @@ public class CoursesController : ControllerBase
     [HttpGet]
     [Route("Users/{userId}")]
     [Authorize(Roles = "admin, user")]
-    public async Task<IActionResult> GetUserCourses(Guid userId, CancellationToken cancellationToken, int pageIndex = 1, int pageSize = 12)
+    public async Task<IActionResult> GetUserCourses(Guid userId, CancellationToken cancellationToken)
     {
-        var result = await _courseService.GetCoursesByUserId(userId,pageIndex, pageSize, cancellationToken);
+        var result = await _courseService.GetCoursesByEnrollmentUserId(userId, cancellationToken);
+        return result.IsSuccess ? Ok(result) : result.ToProblemDetails();
+    }
+    [HttpGet]
+    [Route("Instructor/{userId}")]
+    [Authorize(Roles = "admin, instructor")]
+    public async Task<IActionResult> GetInstructorUserCourses(Guid userId, CancellationToken cancellationToken)
+    {
+        var result = await _courseService.GetCoursesByInstructorId(userId, cancellationToken);
         return result.IsSuccess ? Ok(result) : result.ToProblemDetails();
     }
 

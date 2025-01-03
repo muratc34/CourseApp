@@ -10,9 +10,11 @@ public static class CachingKeys
     public static string CourseByIdKey(Guid courseId) => $"course:{courseId}";
     public static string CoursesByCagetoryIdKey(Guid categoryId, int pageIndex, int pageSize) => $"coursesbycategoryid:{categoryId}:{pageIndex}:{pageSize}";
     public static string CoursesByCagetoryIdRemoveKey(Guid categoryId) => $"coursesbycategoryid:{categoryId}:*";
-    public static string UserCoursesByUserIdKey(Guid userId, int pageIndex, int pageSize) => $"usercoursesbyuserid:{userId}:{pageIndex}:{pageSize}";
-    public static string UserCoursesByUserIdRemoveKey(Guid userId) => $"usercoursesbyuserid:{userId}:*";
-    public static string UserCoursesByUserIdRemoveAllKey => $"usercoursesbyuserid:*";
+    public static string UserCoursesByEnrollmentUserIdKey(Guid userId) => $"usercoursesbyenrollmentuserid:{userId}";
+    public static string UserCoursesByEnrollmentUserIdRemoveAllKey => $"usercoursesbyenrollmentuserid:*";
+
+    public static string UserCoursesByInstructorUserIdKey(Guid userId) => $"usercoursesbyinstructoruserid:{userId}";
+    public static string UserCoursesByInstructorUserIdRemoveAllKey => $"usercoursesbyinstructoruserid:*";
     public static string OrdersByUserIdKey(Guid userId, int pageIndex, int pageSize) => $"ordersbyuserid:{userId}:{pageIndex}:{pageSize}";
     public static string OrdersByUserIdRemoveKey(Guid userId) => $"ordersbyuserid:{userId}:*";
     public static string OrdersByIdKey(Guid orderId) => $"ordersbyid:{orderId}";

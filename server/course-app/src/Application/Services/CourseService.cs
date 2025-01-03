@@ -10,7 +10,8 @@ public interface ICourseService
     Task<Result<CourseDetailDto>> GetCourseById(Guid courseId);
     Task<Result<PagedList<CourseDetailDto>>> GetCourseByCategoryId(Guid categoryId, int pageIndex, int pageSize, CancellationToken cancellationToken);
     Task<Result> RegisterUserToCourse(Guid courseId, Guid userId);
-    Task<Result<PagedList<CourseDetailDto>>> GetCoursesByUserId(Guid userId, int pageIndex, int pageSize, CancellationToken cancellationToken);
+    Task<Result<List<CourseDetailDto>>> GetCoursesByEnrollmentUserId(Guid userId, CancellationToken cancellationToken);
+    Task<Result<List<CourseDetailDto>>> GetCoursesByInstructorId(Guid userId, CancellationToken cancellationToken);
     Task<Result> UpdateCourseImage(Guid courseId, string fileExtension, byte[] fileData, CancellationToken cancellationToken);
     Task<Result> RemoveCourseImage(Guid courseId, CancellationToken cancellationToken);
     Task<Result<List<CourseDetailDto>>> SearchCoursesByName(string searchName, CancellationToken cancellationToken); 
@@ -86,10 +87,8 @@ public class CourseService : ICourseService
         await _cacheService.RemoveAsync(CachingKeys.CoursesRemoveKey);
         await _cacheService.RemoveAsync(CachingKeys.CourseByIdKey(course.Id));
         await _cacheService.RemoveAsync(CachingKeys.CoursesByCagetoryIdRemoveKey(course.CategoryId));
-        foreach (var item in course.Enrollments)
-        {
-            await _cacheService.RemoveAsync(CachingKeys.UserCoursesByUserIdRemoveKey(item.User.Id));
-        }
+        await _cacheService.RemoveAsync(CachingKeys.UserCoursesByEnrollmentUserIdRemoveAllKey);
+        await _cacheService.RemoveAsync(CachingKeys.UserCoursesByInstructorUserIdRemoveAllKey);
         return Result.Success();
     }
 
@@ -235,10 +234,8 @@ public class CourseService : ICourseService
         await _cacheService.RemoveAsync(CachingKeys.CoursesRemoveKey);
         await _cacheService.RemoveAsync(CachingKeys.CourseByIdKey(course.Id));
         await _cacheService.RemoveAsync(CachingKeys.CoursesByCagetoryIdRemoveKey(course.CategoryId));
-        foreach (var item in course.Enrollments)
-        {
-            await _cacheService.RemoveAsync(CachingKeys.UserCoursesByUserIdRemoveKey(item.User.Id));
-        }
+        await _cacheService.RemoveAsync(CachingKeys.UserCoursesByEnrollmentUserIdRemoveAllKey);
+        await _cacheService.RemoveAsync(CachingKeys.UserCoursesByInstructorUserIdRemoveAllKey);
         return Result.Success();
     }
 
@@ -262,26 +259,45 @@ public class CourseService : ICourseService
         await _cacheService.RemoveAsync(CachingKeys.CoursesRemoveKey);
         await _cacheService.RemoveAsync(CachingKeys.CourseByIdKey(course.Id));
         await _cacheService.RemoveAsync(CachingKeys.CoursesByCagetoryIdRemoveKey(course.CategoryId));
-        await _cacheService.RemoveAsync(CachingKeys.UserCoursesByUserIdRemoveKey(user.Id));
+        await _cacheService.RemoveAsync(CachingKeys.UserCoursesByEnrollmentUserIdRemoveAllKey);
 
         return Result.Success();
     }
 
-    public async Task<Result<PagedList<CourseDetailDto>>> GetCoursesByUserId(Guid userId, int pageIndex, int pageSize, CancellationToken cancellationToken)
+    public async Task<Result<List<CourseDetailDto>>> GetCoursesByEnrollmentUserId(Guid userId, CancellationToken cancellationToken)
     {
-        var cachedCourses = await _cacheService.GetAsync<PagedList<CourseDetailDto>>(CachingKeys.UserCoursesByUserIdKey(userId, pageIndex, pageSize));
+        var cachedCourses = await _cacheService.GetAsync<List<CourseDetailDto>>(CachingKeys.UserCoursesByEnrollmentUserIdKey(userId));
         if (cachedCourses is not null)
         {
             return Result.Success(cachedCourses);
         }
 
-        var pagedUserCourses = await _courseRepository.GetAllByPagingAsync(pageIndex, pageSize, cancellationToken, x => new CourseDetailDto(x.Id, x.CreatedOnUtc, x.ModifiedOnUtc, x.Name, x.Description, x.Price, x.ImageUrl,
+        var userCourses = await _courseRepository.FindAll()
+            .Where(c => c.Enrollments.Any(c => c.UserId == userId))
+            .Select(x => new CourseDetailDto(x.Id, x.CreatedOnUtc, x.ModifiedOnUtc, x.Name, x.Description, x.Price, x.ImageUrl,
                 new CategoryDto(x.Category.Id, x.Category.CreatedOnUtc, x.ModifiedOnUtc, x.Name),
-                new UserDto(x.Instructor.Id, x.Instructor.CreatedOnUtc, x.Instructor.FullName, x.Instructor.Email, x.Instructor.UserName, x.Instructor.ProfilePictureUrl)
-            ), c => c.Enrollments.Any(e => e.UserId == userId));
+                new UserDto(x.Instructor.Id, x.Instructor.CreatedOnUtc, x.Instructor.FullName, x.Instructor.Email, x.Instructor.UserName, x.Instructor.ProfilePictureUrl))
+            ).ToListAsync(cancellationToken);
 
-        await _cacheService.SetAsync(CachingKeys.UserCoursesByUserIdKey(userId, pageIndex, pageSize), pagedUserCourses, TimeSpan.FromMinutes(60));
-        return Result.Success(pagedUserCourses);
+        await _cacheService.SetAsync(CachingKeys.UserCoursesByEnrollmentUserIdKey(userId), userCourses, TimeSpan.FromMinutes(60));
+        return Result.Success(userCourses);
+    }
+
+    public async Task<Result<List<CourseDetailDto>>> GetCoursesByInstructorId(Guid userId, CancellationToken cancellationToken)
+    {
+        var cachedCourses = await _cacheService.GetAsync<List<CourseDetailDto>>(CachingKeys.UserCoursesByInstructorUserIdKey(userId));
+        if (cachedCourses is not null)
+        {
+            return Result.Success(cachedCourses);
+        }
+        var userCourses = await _courseRepository.FindAll()
+            .Where(c => c.InstructorId == userId)
+            .Select(x => new CourseDetailDto(x.Id, x.CreatedOnUtc, x.ModifiedOnUtc, x.Name, x.Description, x.Price, x.ImageUrl,
+                new CategoryDto(x.Category.Id, x.Category.CreatedOnUtc, x.ModifiedOnUtc, x.Name),
+                new UserDto(x.Instructor.Id, x.Instructor.CreatedOnUtc, x.Instructor.FullName, x.Instructor.Email, x.Instructor.UserName, x.Instructor.ProfilePictureUrl))
+            ).ToListAsync(cancellationToken);
+        await _cacheService.SetAsync(CachingKeys.UserCoursesByEnrollmentUserIdKey(userId), userCourses, TimeSpan.FromMinutes(60));
+        return Result.Success(userCourses);
     }
 
     public async Task<Result> UpdateCourseImage(Guid courseId, string fileExtension, byte[] fileData, CancellationToken cancellationToken)
@@ -299,7 +315,8 @@ public class CourseService : ICourseService
         await _cacheService.RemoveAsync(CachingKeys.CoursesRemoveKey);
         await _cacheService.RemoveAsync(CachingKeys.CourseByIdKey(course.Id));
         await _cacheService.RemoveAsync(CachingKeys.CoursesByCagetoryIdRemoveKey(course.CategoryId));
-        await _cacheService.RemoveAsync(CachingKeys.UserCoursesByUserIdRemoveAllKey);
+        await _cacheService.RemoveAsync(CachingKeys.UserCoursesByEnrollmentUserIdRemoveAllKey);
+        await _cacheService.RemoveAsync(CachingKeys.UserCoursesByInstructorUserIdRemoveAllKey);
         return Result.Success();
     }
 
@@ -322,7 +339,8 @@ public class CourseService : ICourseService
         await _cacheService.RemoveAsync(CachingKeys.CoursesRemoveKey);
         await _cacheService.RemoveAsync(CachingKeys.CourseByIdKey(course.Id));
         await _cacheService.RemoveAsync(CachingKeys.CoursesByCagetoryIdRemoveKey(course.CategoryId));
-        await _cacheService.RemoveAsync(CachingKeys.UserCoursesByUserIdRemoveAllKey);
+        await _cacheService.RemoveAsync(CachingKeys.UserCoursesByEnrollmentUserIdRemoveAllKey);
+        await _cacheService.RemoveAsync(CachingKeys.UserCoursesByInstructorUserIdRemoveAllKey);
         return Result.Success();
     }
 

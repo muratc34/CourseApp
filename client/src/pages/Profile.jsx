@@ -82,10 +82,10 @@ const Profile = () => {
 
   const getUserCoursesData = async () => {
     courseApi
-      .getUserCoursesByUserId(authUser.id)
+      .getUserCoursesByEnrollmentUserId(authUser.id)
       .then((response) => {
         console.log(response)
-        setUserCourses(response.data.items);
+        setUserCourses(response.data);
       })
       .catch((error) => {
         console.error("Error fetching courses data:", error);

@@ -4,9 +4,10 @@ import { useCart } from "../contexts/CartContext";
 import defaultCourseImg from "/src/assets/default-course-img.png";
 
 const CourseCard = ({ course }) => {
-  const { cart, addToCart } = useCart();
+  const { cart, addToCart, userCourses } = useCart();
 
   const isInCart = cart.some((item) => item.id === course.id);
+  const isOwnedByUser = userCourses.some((userCourse) => userCourse.id === course.id);
   return (
     <div className="group relative shadow-lg rounded-2xl">
       <Link to={`/course/${course.id}`}>
@@ -34,7 +35,7 @@ const CourseCard = ({ course }) => {
       </div>
       <div className="w-full flex justify-end items-center">
         <button
-          onClick={() => !isInCart && addToCart(course)}
+          onClick={() => !isInCart && !isOwnedByUser && addToCart(course)}
           disabled={isInCart}
           className={`w-full font-medium rounded-lg text-sm px-5 py-2.5 text-center ms-2 me-2 mb-2 ${
             isInCart
@@ -42,7 +43,7 @@ const CourseCard = ({ course }) => {
               : "text-white bg-gradient-to-r from-indigo-500 via-indigo-600 to-indigo-700 hover:bg-gradient-to-br"
           }`}
         >
-          {isInCart ? "Already in basket" : "Add to basket"}
+          {isOwnedByUser ? "Already Owned" : isInCart ? "Already in Basket" : "Add to Basket"}
         </button>
       </div>
     </div>

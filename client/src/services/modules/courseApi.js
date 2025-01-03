@@ -5,7 +5,8 @@ const createEndpoint = "/Courses";
 const getEndpoint = (pageIndex, pageSize) => `/Courses?pageIndex=${pageIndex}&pageSize=${pageSize}`;
 const getUpdateAndDeleteCourseEndpoint = (courseId) => `/Courses/${courseId}`;
 const getCoursesByCategoryIdEndpoint = (categoryId, pageIndex, pageSize) => `/Courses/Categories/${categoryId}?pageIndex=${pageIndex}&pageSize=${pageSize}`;
-const getUserCoursesByUserIdEndpoint = (userId) => `/Courses/Users/${userId}`;
+const getUserCoursesByEnrollmentUserIdEndpoint = (userId) => `/Courses/Users/${userId}`;
+const getUserCoursesByInstructorUserIdEndpoint = (userId) => `/Courses/Instructor/${userId}`;
 const uploadAndRemoveCourseImageEndpoint = (courseId) => `/Courses/UploadImage/${courseId}`;
 const searchCourseByNameEndpoint = (searchName) => `/Courses/Search?searchName=${searchName}`
 
@@ -34,8 +35,12 @@ const courseApi = {
         const response = await publicClient.get(getCoursesByCategoryIdEndpoint(categoryId, pageIndex, pageSize));
         return response;
     },
-    getUserCoursesByUserId: async(userId) => {
-        const response = await privateClient.get(getUserCoursesByUserIdEndpoint(userId));
+    getUserCoursesByEnrollmentUserId: async(userId) => {
+        const response = await privateClient.get(getUserCoursesByEnrollmentUserIdEndpoint(userId));
+        return response;
+    },
+    getUserCoursesByInstructorId: async(userId) => {
+        const response = await privateClient.get(getUserCoursesByInstructorUserIdEndpoint(userId));
         return response;
     },
     uploadCourseImage: async(courseId, data) => {

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
+import courseApi from "../services/modules/courseApi";
 
 const CartContext = createContext();
 
@@ -10,9 +11,28 @@ export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const [purchasedItems, setPurchasedItems] = useState([]);
   const [pendingItem, setPendingItem] = useState(null);
+  const [userCourses, setUserCourses] = useState([]);
 
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  const getUserCourses = () => {
+    courseApi.getUserCoursesByEnrollmentUserId(user.id)
+    .then(response => {
+      setUserCourses(response.data)
+    }).catch(error => {
+      console.error(error);
+    })
+  }
+
+  useEffect(() => {
+    if(user)
+    {
+      getUserCourses();
+    }
+  }, [user])
+  
+
 
   useEffect(() => {
     const storedCart = localStorage.getItem("cart");
@@ -24,6 +44,7 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
+
 
   const addToCart = (course) => {
     if (!user) {
@@ -84,6 +105,7 @@ export const CartProvider = ({ children }) => {
       value={{
         cart,
         purchasedItems,
+        userCourses,
         addToCart,
         addPendingItem,
         removeFromCart,
