@@ -88,7 +88,7 @@ internal class PaymentService : IPaymentService
         {
             return Result.Failure(DomainErrors.Order.NotFound);
         }
-        if (confirm.PaymentStatus.Equals(""))
+        if (!confirm.PaymentStatus.Equals("SUCCESS"))
         {
             await _orderService.UpdateStatusAsFailed(order.Data.Id);
             return Result.Failure(DomainErrors.Payment.Failed);

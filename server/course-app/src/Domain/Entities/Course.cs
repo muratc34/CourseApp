@@ -2,7 +2,7 @@
 
 public class Course : Entity, IAuditableEntity, ISoftDeletableEntity
 {
-    public Course(string name, string description, decimal price, string? imageUrl, Guid categoryId, Guid instructorId) : base()
+    public Course(string name, string description, decimal price, Guid categoryId, Guid instructorId) : base()
     {
         Ensure.NotEmpty(name, "The name is required.", nameof(name));
         Ensure.NotEmpty(name, "The description is required.", nameof(name));
@@ -14,7 +14,6 @@ public class Course : Entity, IAuditableEntity, ISoftDeletableEntity
         Description = description;
         Price = price;
         CategoryId = categoryId;
-        ImageUrl = imageUrl;
         InstructorId = instructorId;
         Enrollments = [];
     }
@@ -39,12 +38,12 @@ public class Course : Entity, IAuditableEntity, ISoftDeletableEntity
     public virtual ApplicationUser? Instructor { get; private set; }
     public virtual ICollection<Enrollment>? Enrollments { get; private set; }
 
-    public static Course Create(string name, string description, decimal price, string? imageUrl, Guid categoryId, Guid instructorId)
+    public static Course Create(string name, string description, decimal price, Guid categoryId, Guid instructorId)
     {
-        return new Course(name, description, price, imageUrl, categoryId, instructorId);
+        return new Course(name, description, price, categoryId, instructorId);
     }
 
-    public Course Update(string? name, string? description, decimal? price, string? imageUrl, Guid? categoryId)
+    public Course Update(string? name, string? description, decimal? price, Guid? categoryId)
     {
         if (!string.IsNullOrEmpty(name)) 
         {
@@ -57,10 +56,6 @@ public class Course : Entity, IAuditableEntity, ISoftDeletableEntity
         if (price != null && price > 0)
         {
             Price = (decimal)price;
-        }
-        if (!string.IsNullOrEmpty(imageUrl))
-        {
-            ImageUrl = imageUrl;
         }
         if (categoryId != null && categoryId != Guid.Empty)
         {

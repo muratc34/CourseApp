@@ -1,4 +1,7 @@
-﻿namespace Infrastructure;
+﻿using System;
+using System.Data;
+
+namespace Infrastructure;
 
 public class DatabaseContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
 {
@@ -20,14 +23,13 @@ public class DatabaseContext : IdentityDbContext<ApplicationUser, ApplicationRol
         base.OnModelCreating(builder);
     }
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         long utcNow = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
         UpdateAuditableEntities(utcNow);
         UpdateSoftDeletableEntities(utcNow);
-
-        return base.SaveChangesAsync(cancellationToken);
+        return await base.SaveChangesAsync(cancellationToken);
     }
 
     private void UpdateAuditableEntities(long utcNow)

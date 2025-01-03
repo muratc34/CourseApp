@@ -63,7 +63,7 @@ public class CourseService : ICourseService
             return Result.Failure<CourseDto>(DomainErrors.Category.NotFound);
         }
 
-        var course = Domain.Entities.Course.Create(courseCreateDto.Name, courseCreateDto.Description, courseCreateDto.Price, courseCreateDto.ImageUrl, courseCreateDto.CategoryId, courseCreateDto.InstructorId);
+        var course = Domain.Entities.Course.Create(courseCreateDto.Name, courseCreateDto.Description, courseCreateDto.Price, courseCreateDto.CategoryId, courseCreateDto.InstructorId);
 
         await _courseRepository.CreateAsync(course);
         await _unitOfWork.SaveChangesAsync();
@@ -227,7 +227,7 @@ public class CourseService : ICourseService
                 return Result.Failure(DomainErrors.Category.NotFound);
             }
         }
-        course.Update(courseUpdateDto.Name, courseUpdateDto.Description, courseUpdateDto.Price, courseUpdateDto.ImageUrl, courseUpdateDto.CategoryId);
+        course.Update(courseUpdateDto.Name, courseUpdateDto.Description, courseUpdateDto.Price, courseUpdateDto.CategoryId);
         _courseRepository.Update(course);
         await _unitOfWork.SaveChangesAsync();
        
