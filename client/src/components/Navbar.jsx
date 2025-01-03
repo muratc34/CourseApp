@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { MdMenu, MdClose } from "react-icons/md";
 import { PiShoppingCartSimpleThin } from "react-icons/pi";
 import { useAuth } from "../contexts/AuthContext";
@@ -10,14 +10,30 @@ import Search from "./Search";
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const navigate = useNavigate()
 
   const { user, logout } = useAuth();
-  const { cart } = useCart();
+  const { cart, clearCart } = useCart();
+
+  const handleLogout = () => {
+    clearCart();
+    logout();
+    setIsMobileMenuOpen(false)
+    navigate("/");
+  }
 
   const navItems = [
     { id: 1, title: "Home", path: "/" },
     { id: 2, title: "Courses", path: "/courses" },
   ];
+
+  useEffect(() => {
+    if(user && user.roles && user.roles.includes("instructor"))
+    {
+      navItems.push({id:3, title:"Manage Courses", path:"/instructor/courses"})
+    }
+  }, [user])
+  
 
   const profileNavItems = [
     { id: 1, title: "Profile", path: `/profile` }
@@ -80,7 +96,7 @@ const Navbar = () => {
             <div className="relative ml-3">
               <div>
                 <div
-                  className=" flex rounded-full bg-gray-800 text-sm hover:cursor-pointer"
+                  className=" flex rounded-full text-sm hover:cursor-pointer"
                   onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                 >
                   <img
@@ -108,7 +124,7 @@ const Navbar = () => {
                   ))}
                   <div
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:cursor-pointer"
-                    onClick={logout}
+                    onClick={handleLogout}
                   >
                     Sign out
                   </div>
@@ -197,7 +213,7 @@ const Navbar = () => {
               ))}
               <div
                 className="hover:bg-indigo-600 text-gray-600 font-semibold hover:text-white rounded-md px-3 py-2 duration-200 w-full hover:cursor-pointer"
-                onClick={logout}
+                onClick={handleLogout}
               >
                 Sign out
               </div>

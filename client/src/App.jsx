@@ -9,14 +9,13 @@ import EmailConfirm from './pages/EmailConfirm'
 import ProtectedRoute from './configs/ProtectedRoute'
 import CourseDetail from './pages/CourseDetail'
 import Courses from './pages/Courses'
-import CreateCourse from './pages/CreateCourse'
 import Order from './pages/Order'
 import Profile from './pages/Profile'
 import InstructorRoute from './configs/InstructorRoute'
 import { CartProvider } from './contexts/CartContext'
-import Payment from './pages/Payment'
 import Footer from './components/Footer'
 import PaymentCallback from './pages/PaymentCallback'
+import ManageCourses from './pages/ManageCourses'
 
 const App = () => {
 
@@ -34,12 +33,11 @@ const App = () => {
           <Route path='/courses' element={<Courses/>}/>
           <Route element={<ProtectedRoute/>}>
             <Route path='/basket' element={<Order/>}/>
-            <Route path='/basket/:id' element={<Payment/>}/>
             <Route path='/profile' element={<Profile/>}/>
             <Route path="/payment-result" element={<PaymentCallback/>} />
           </Route>
           <Route element={<InstructorRoute/>}>
-            <Route path='/create-course' element={<CreateCourse/>}/>
+            <Route path='/instructor/courses' element={<ManageCourses/>}/>
           </Route>
           <Route path="*" element={<Home/>} />
         </Routes>

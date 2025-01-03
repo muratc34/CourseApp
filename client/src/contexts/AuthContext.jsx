@@ -8,7 +8,7 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 const AuthProvider = ({children}) => {
-    const [user, setUser] = useState(null);
+    const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -41,6 +41,7 @@ const AuthProvider = ({children}) => {
             throw err;
         });
     }
+
     const logout = () => {
         clearTokens();
     };
@@ -52,7 +53,6 @@ const AuthProvider = ({children}) => {
         }
         return localStorage.getItem('token');
     };
-
     const initializeUser = async (token) => {
         const decoded = jwtDecode(token);
         const roles = decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];

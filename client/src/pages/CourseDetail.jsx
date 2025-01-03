@@ -10,12 +10,15 @@ const CourseDetail = () => {
   const [course, setCourse] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const { id } = useParams();
-  const { cart, addToCart } = useCart();
+  const { cart, addToCart, userCourses } = useCart();
 
-  const isInCart = cart?.some((item) => item.id === course.id);
+  const isInCart = course && cart.some((item) => item.id === course.id);
+  const isOwnedByUser =
+    course && userCourses?.some((userCourse) => userCourse.id === course.id);
 
   useEffect(() => {
-    courseApi.getCourseById(id)
+    courseApi
+      .getCourseById(id)
       .then((response) => {
         setCourse(response.data);
         setIsLoading(false);
@@ -80,7 +83,7 @@ const CourseDetail = () => {
               {course.price} ₺
             </p>
             <button
-              onClick={() => !isInCart && addToCart(course)}
+              onClick={() => !isInCart && !isOwnedByUser && addToCart(course)}
               disabled={isInCart}
               className={`w-full font-medium rounded-lg text-sm px-5 py-2.5 text-center ms-2 me-2 mt-5 ${
                 isInCart
@@ -88,7 +91,11 @@ const CourseDetail = () => {
                   : "text-white bg-gradient-to-r from-indigo-500 via-indigo-600 to-indigo-700 hover:bg-gradient-to-br"
               }`}
             >
-              {isInCart ? "Already in basket" : "Add to basket"}
+              {isOwnedByUser
+                ? "Already Owned"
+                : isInCart
+                ? "Already in Basket"
+                : "Add to Basket"}
             </button>
           </div>
         </div>

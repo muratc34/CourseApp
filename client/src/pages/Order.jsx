@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { useCart } from "../contexts/CartContext";
-import { Link, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { IoTrashOutline } from "react-icons/io5";
 import defaultCourseImg from "/src/assets/default-course-img.png";
 import orderApi from "../services/modules/orderApi";
 import { useAuth } from "../contexts/AuthContext";
 import paymentApi from "../services/modules/paymentApi";
+import Input from "../components/Input";
+import { ToastContainer, toast } from 'react-toastify';
 
 const Order = () => {
   const [address, setAddress] = useState("");
@@ -13,6 +15,7 @@ const Order = () => {
   const [city, setCity] = useState("");
   const [zipcode, setZipcode] = useState("");
   const [tcNo, setTcNo] = useState("74300864791");
+  const [errors, setErrors] = useState([]);
 
   const { cart, removeFromCart, clearCart } = useCart();
   const { user } = useAuth();
@@ -22,7 +25,8 @@ const Order = () => {
   const tax = (subtotal * 20) / 100;
   const total = subtotal + tax;
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (e) => {
+    e.preventDefault();
     await orderApi
       .createOrder({
         userId: user.id,
@@ -34,7 +38,13 @@ const Order = () => {
         tcNo: tcNo,
       })
       .then((response) => {
-        createPayment(response.data.id);
+        toast.success("Your order has been created, you are directed to the payment page.")
+        setTimeout(() => {
+          createPayment(response.data.id);
+        }, 2000)
+      })
+      .catch((error) => {
+        setErrors(error.errors);
       });
   };
 
@@ -44,8 +54,16 @@ const Order = () => {
     });
   };
 
+  const handleInputChange = (setter) => (e) => {
+    setter(e.target.value);
+    setErrors([]);
+  };
+
   return (
-    <div className="flex flex-col lg:flex-row gap-6 rounded-lg shadow-lg p-6 bg-white 2xl:mx-48 xl:mx-24 lg:mx-12 md:mx-8 mx-2 my-24">
+    <form
+      onSubmit={(e) => handleCheckout(e)}
+      className="flex flex-col lg:flex-row gap-6 rounded-lg shadow-lg p-6 bg-white 2xl:mx-48 xl:mx-24 lg:mx-12 md:mx-8 mx-2 my-24"
+    >
       <div className="p-6 w-full">
         <div className="flex items-start justify-between">
           <h1 className="text-lg font-medium text-gray-900">
@@ -53,115 +71,61 @@ const Order = () => {
           </h1>
         </div>
         <div className="space-y-6 mt-5">
-          <div>
-            <label
-              htmlFor="address"
-              className="block text-sm/6 font-medium text-gray-900"
-            >
-              Address Line
-            </label>
-            <div className="mt-1">
-              <input
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                id="address"
-                name="address"
-                type="text"
-                required
-                autoComplete="address"
-                className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-              />
-            </div>
-          </div>
+          <Input
+            id={"address"}
+            type={"text"}
+            required={true}
+            value={address}
+            onChange={handleInputChange(setAddress)}
+            label={"Address Line"}
+            placeholder={"Enter your address"}
+          />
           <div className="flex md:flex-row flex-col flex-column gap-6 justify-between">
-            <div className="w-full">
-              <label
-                htmlFor="country"
-                className="block text-sm/6 font-medium text-gray-900"
-              >
-                Country
-              </label>
-              <div className="mt-1">
-                <input
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value)}
-                  id="country"
-                  name="country"
-                  type="text"
-                  required
-                  autoComplete="country"
-                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-                />
-              </div>
-            </div>
-            <div className="w-full">
-              <label
-                htmlFor="city"
-                className="block text-sm/6 font-medium text-gray-900"
-              >
-                City
-              </label>
-              <div className="mt-1">
-                <input
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  id="city"
-                  name="city"
-                  type="text"
-                  required
-                  autoComplete="city"
-                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-                />
-              </div>
-            </div>
+            <Input
+              id={"country"}
+              type={"text"}
+              required={true}
+              value={country}
+              onChange={handleInputChange(setCountry)}
+              label={"Country"}
+              placeholder={"Enter your country"}
+            />
+            <Input
+              id={"city"}
+              type={"text"}
+              required={true}
+              value={city}
+              onChange={handleInputChange(setCity)}
+              label={"City"}
+              placeholder={"Enter your city"}
+            />
           </div>
           <div className="flex md:flex-row flex-col gap-6 justify-between">
-            <div className="w-full">
-              <label
-                htmlFor="zipcode"
-                className="block text-sm/6 font-medium text-gray-900"
-              >
-                Zip Code
-              </label>
-              <div className="mt-1">
-                <input
-                  value={zipcode}
-                  onChange={(e) => setZipcode(e.target.value)}
-                  id="zipcode"
-                  name="zipcode"
-                  type="text"
-                  required
-                  autoComplete="zipcode"
-                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-                />
-              </div>
-            </div>
-            <div className="w-full">
-              <label
-                htmlFor="tcNo"
-                className="block text-sm/6 font-medium text-gray-900"
-              >
-                TC Number
-              </label>
-              <div className="mt-1">
-                <input
-                  value={tcNo}
-                  onChange={(e) => setTcNo(e.target.value)}
-                  id="tcNo"
-                  name="tcNo"
-                  type="text"
-                  required
-                  autoComplete="tcNo"
-                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-                />
-              </div>
-            </div>
+            <Input
+              id={"zipcode"}
+              type={"text"}
+              required={true}
+              value={zipcode}
+              onChange={handleInputChange(setZipcode)}
+              label={"Zipcode"}
+              placeholder={"Enter your zipcode"}
+            />
+            <Input
+              id={"tcNo"}
+              type={"text"}
+              required={true}
+              value={tcNo}
+              onChange={handleInputChange(setTcNo)}
+              label={"TC Number"}
+              placeholder={"Enter your tc identity number"}
+            />
           </div>
         </div>
         <div className="flex justify-start items-center mt-5 m-1">
           <input
             type="checkbox"
             name="privacy"
+            required
             className="min-w-3 min-h-3 rounded accent-indigo-600"
           />
           <label htmlFor="privacy" className="ms-2 text-sm">
@@ -173,11 +137,21 @@ const Order = () => {
             type="checkbox"
             name="privacy"
             className="min-w-3 min-h-3 rounded accent-indigo-600"
+            required
           />
           <label htmlFor="privacy" className="ms-2 text-sm">
             I have read and accept the Delivery and Return Policies.
           </label>
         </div>
+        {errors.length > 0 ? (
+          errors.map((error, index) => (
+            <div key={index} className="text-md text-red-500 m-1 mt-3">
+              {error.description}
+            </div>
+          ))
+        ) : (
+          <></>
+        )}
       </div>
       {/*Order Summary*/}
       <div className="rounded-lg bg-slate-50 p-6 w-full">
@@ -194,10 +168,7 @@ const Order = () => {
         <div className="mt-8 ">
           <div className="flow-root">
             {cart.length > 0 ? (
-              <ul
-                role="list"
-                className="-my-6 divide-y divide-gray-200"
-              >
+              <ul role="list" className="-my-6 divide-y divide-gray-200">
                 {cart.map((item) => (
                   <li key={item.id} className="flex py-6">
                     <div className="size-24 shrink-0 overflow-hidden rounded-md border border-gray-200">
@@ -261,14 +232,21 @@ const Order = () => {
             <p>{total.toFixed(2)} ₺</p>
           </div>
           <button
-            onClick={handleCheckout}
+            type="submit"
             className="w-full mt-4 bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700"
           >
             Checkout
           </button>
+          <ToastContainer 
+              position="bottom-center"
+              autoClose={1500}
+              hideProgressBar={true}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}/>
         </div>
       </div>
-    </div>
+    </form>
   );
 };
 

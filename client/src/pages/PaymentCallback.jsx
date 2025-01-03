@@ -15,7 +15,7 @@ const PaymentCallback = () => {
   const { clearCart } = useCart();
 
   useEffect(() => {
-    if (false) {
+    if (token) {
       paymentApi
         .confirmPayment({ token: token })
         .then((response) => {
@@ -58,7 +58,9 @@ const PaymentCallback = () => {
           Payment Failed
         </h1>
         <p className="max-w-[600px] text-center text-gray-700 md:text-xl/relaxed">
-        Sorry, your order could not be processed. Please check your payment details or contact our customer service. Thank you for shopping with us.
+          Sorry, your order could not be processed. Please check your payment
+          details or contact our customer service. Thank you for shopping with
+          us.
         </p>
       </div>
     </div>

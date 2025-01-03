@@ -1,145 +1,95 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import Input from "../components/Input";
 
 const Register = () => {
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
-  const [userName, setUserName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [userName, setUserName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState([]);
   const navigate = useNavigate();
-  const {register} = useAuth();
+  const { register } = useAuth();
 
-  const handleRegister = async(e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     await register({
       firstName: firstName,
       lastName: lastName,
       userName: userName,
       email: email,
-      password: password
+      password: password,
     }).then(() => {
       navigate("/email-confirm");
-    })
-  }
+    }).catch((error) => {
+      setErrors(error.errors);
+    });
+  };
+
+  const handleInputChange = (setter) => (e) => {
+    setter(e.target.value);
+    setErrors([]);
+  };
 
   return (
-    <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
+    <div className="flex min-h-full flex-1 flex-col justify-center px-6 my-20 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-        <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-gray-900">
+        <h2 className="my-6 text-center text-4xl font-bold tracking-tight text-gray-700">
           Create a new account
         </h2>
       </div>
 
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
         <form onSubmit={handleRegister} className="space-y-6">
-          <div className="flex justify-between">
-            <div>
-              <label
-                htmlFor="firstName"
-                className="block text-sm/6 font-medium text-gray-900"
-              >
-                First Name
-              </label>
-              <div className="mt-2">
-                <input
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  id="firstName"
-                  name="firstName"
-                  type="firstName"
-                  required
-                  autoComplete="firstName"
-                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-                />
-              </div>
-            </div>
-            <div>
-              <label
-                htmlFor="lastName"
-                className="block text-sm/6 font-medium text-gray-900"
-              >
-                Last Name
-              </label>
-              <div className="mt-2">
-                <input
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  id="lastName"
-                  name="lastName"
-                  type="lastName"
-                  required
-                  autoComplete="lastName"
-                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-                />
-              </div>
-            </div>
+          <div className="flex flex-col md:flex-row justify-between gap-5">
+            <Input
+              id={"firstName"}
+              type={"text"}
+              required={true}
+              value={firstName}
+              onChange={handleInputChange(setFirstName)}
+              label={"First Name"}
+              placeholder={"Enter your first name"}
+            />
+            <Input
+              id={"lastName"}
+              type={"text"}
+              required={true}
+              value={lastName}
+              onChange={handleInputChange(setLastName)}
+              label={"Last Name"}
+              placeholder={"Enter your last name"}
+            />
           </div>
-          <div>
-            <label
-              htmlFor="userName"
-              className="block text-sm/6 font-medium text-gray-900"
-            >
-              Username
-            </label>
-            <div className="mt-2">
-              <input
-                value={userName}
-                onChange={(e) => setUserName(e.target.value)}
-                id="userName"
-                name="userName"
-                type="userName"
-                required
-                autoComplete="userName"
-                className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm/6 font-medium text-gray-900"
-            >
-              Email address
-            </label>
-            <div className="mt-2">
-              <input
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                id="email"
-                name="email"
-                type="email"
-                required
-                autoComplete="email"
-                className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-              />
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between">
-              <label
-                htmlFor="password"
-                className="block text-sm/6 font-medium text-gray-900"
-              >
-                Password
-              </label>
-            </div>
-            <div className="mt-2">
-              <input
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                id="password"
-                name="password"
-                type="password"
-                required
-                autoComplete="current-password"
-                className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-              />
-            </div>
-          </div>
+          <Input
+            id={"userName"}
+            type={"text"}
+            required={true}
+            value={userName}
+            onChange={handleInputChange(setUserName)}
+            label={"Username"}
+            placeholder={"Enter your username"}
+          />
+          <Input
+            id={"email"}
+            type={"email"}
+            required={true}
+            value={email}
+            onChange={handleInputChange(setEmail)}
+            label={"Email"}
+            placeholder={"Enter your email"}
+          />
+          <Input
+            id={"password"}
+            type={"password"}
+            required={true}
+            value={password}
+            onChange={handleInputChange(setPassword)}
+            label={"Password"}
+            placeholder={"Enter your password"}
+          />
 
           <div>
             <button
@@ -151,14 +101,24 @@ const Register = () => {
           </div>
         </form>
 
-        <p className="mt-10 text-center text-sm/6 text-gray-500">
+        <p className="mt-5 text-center text-sm/6 text-gray-500">
           Already have an account?{" "}
-          <Link to={"/login"}
+          <Link
+            to={"/login"}
             className="font-semibold text-indigo-600 hover:text-indigo-500"
           >
             Sign in your account
           </Link>
         </p>
+        {errors.length > 0 ? (
+          errors.map((error, index) => (
+            <div key={index} className="text-md text-red-500 m-1 mt-3">
+              {error.description}
+            </div>
+          ))
+        ) : (
+          <></>
+        )}
       </div>
     </div>
   );

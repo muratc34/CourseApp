@@ -26,13 +26,11 @@ export const CartProvider = ({ children }) => {
   }
 
   useEffect(() => {
-    if(user)
+    if(user && user.roles.includes("user"))
     {
       getUserCourses();
     }
   }, [user])
-  
-
 
   useEffect(() => {
     const storedCart = localStorage.getItem("cart");

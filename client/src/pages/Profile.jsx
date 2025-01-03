@@ -11,6 +11,8 @@ import axios from "axios";
 import config from "../services/configs/config";
 import authApi from "../services/modules/authApi";
 import CourseCard from "../components/CourseCard";
+import Input from "../components/Input";
+import { ToastContainer, toast } from "react-toastify";
 
 const Profile = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -19,7 +21,6 @@ const Profile = () => {
   const [userOrders, setUserOrders] = useState([]);
   const [userCourses, setUserCourses] = useState([]);
   const [userPicture, setUserPicture] = useState();
-  const [uploadFile, setUploadFile] = useState();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -29,7 +30,8 @@ const Profile = () => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
+  const [updateUserErrors, setUpdateUserErrors] = useState([]);
+  const [changePassErrors, setChangePassErrors] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 3;
@@ -39,14 +41,15 @@ const Profile = () => {
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      setUploadFile(file);
       setUserPicture(URL.createObjectURL(file));
+      uploadUserImg(file);
     }
   };
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setUpdateUserErrors([]);
   };
 
   const getUserProfileData = async () => {
@@ -84,7 +87,6 @@ const Profile = () => {
     courseApi
       .getUserCoursesByEnrollmentUserId(authUser.id)
       .then((response) => {
-        console.log(response)
         setUserCourses(response.data);
       })
       .catch((error) => {
@@ -143,22 +145,22 @@ const Profile = () => {
         userName: formData.userName,
       })
       .then(() => {
-        alert("Success update user data");
+        getUserProfileData();
       })
       .catch((error) => {
-        console.error("Error updating profile:", error);
+        setUpdateUserErrors(error.errors);
       });
   };
 
-  const uploadUserImg = async () => {
-    if (!uploadFile) {
+  const uploadUserImg = (file) => {
+    if (!file) {
       return;
     }
 
     const formData = new FormData();
-    formData.append("formFile", uploadFile);
+    formData.append("formFile", file);
 
-    await axios
+    axios
       .post(`${config.baseURL}/Users/UploadImage/${authUser.id}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -166,38 +168,49 @@ const Profile = () => {
         },
       })
       .then((response) => {
-        console.log("dosya yüklendi", response);
+        toast.success("User picture changed successfully!");
+        getUserProfileData();
       })
       .catch((error) => {
-        console.error(error);
+        toast.error(error);
       });
   };
 
   const saveUserProfile = (e) => {
     e.preventDefault();
     updateUser();
-    uploadUserImg();
     setModalOpen(false);
     getAllData();
   };
 
   const changePassword = (e) => {
     e.preventDefault();
-    if(newPassword !== confirmPassword)
-    {
-      console.log("şifreler uyuşmuyor")
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      console.log("çalıştı");
       return;
     }
-    authApi.changePassword(authUser.id, {oldPassword: currentPassword, newPassword: newPassword})
-    .then(response => {
-      console.log(response);
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    }).catch(error => {
-      console.error(error);
-    })
-  }
+    authApi
+      .changePassword(authUser.id, {
+        oldPassword: currentPassword,
+        newPassword: newPassword,
+      })
+      .then((response) => {
+        console.log(response);
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        toast.success("Password changed successfully!");
+      })
+      .catch((error) => {
+        setChangePassErrors(error.errors);
+      });
+  };
+
+  const handlePassInputChange = (setter) => (e) => {
+    setter(e.target.value);
+    setChangePassErrors([]);
+  };
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -214,27 +227,41 @@ const Profile = () => {
             <div className="space-y-4">
               <div className="flex space-x-4">
                 <img
-                  className="h-16 w-16 rounded-full"
-                  src={user.profilePictureUrl ?? defaultUserPic}
+                  className="size-16 rounded-full"
+                  src={userPicture ?? defaultUserPic}
                   alt={user.fullName}
                 />
                 <div>
                   <h2 className="flex items-center text-xl font-bold leading-none text-gray-900 sm:text-2xl">
                     {user.fullName}
                   </h2>
+                  <label
+                    htmlFor="dropzone-file"
+                    className="flex flex-row items-center justify-center my-1 font-semibold gap-1 py-2 px-4 cursor-pointer bg-indigo-600 text-white rounded-lg select-none"
+                  >
+                    <IoCloudUploadSharp className="w-4 h-4 text-white me-2" />
+                    Change Avatar
+                  </label>
+                  <input
+                    id="dropzone-file"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                  />
                 </div>
               </div>
-              <dl className="">
+              <dl>
                 <dt className="font-semibold text-gray-900">Register Date</dt>
                 <dd className="text-gray-500">
                   {dateFormatter(user.createdOnUtc)}
                 </dd>
               </dl>
-              <dl className="">
+              <dl>
                 <dt className="font-semibold text-gray-900">Email Address</dt>
                 <dd className="text-gray-500">{user.email}</dd>
               </dl>
-              <dl className="">
+              <dl>
                 <dt className="font-semibold text-gray-900">Username</dt>
                 <dd className="text-gray-500">{user.userName}</dd>
               </dl>
@@ -248,72 +275,44 @@ const Profile = () => {
               </button>
             </div>
             <div className="space-y-4">
-              <h2 className="flex items-center text-xl font-bold leading-none text-gray-700 sm:text-2xl">Change Your Password</h2>
+              <h2 className="flex items-center text-xl font-bold leading-none text-gray-700 sm:text-2xl">
+                Change Your Password
+              </h2>
               <form onSubmit={(e) => changePassword(e)} className="p-4 md:p-5">
                 <div className="mb-2">
-                  <div className="flex items-center justify-between">
-                    <label
-                      htmlFor="currentPassword"
-                      className="block text-sm/6 font-medium text-gray-900"
-                    >
-                      Current Password
-                    </label>
-                  </div>
-                  <div className="mt-2">
-                    <input
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      name="currentPassword"
-                      type="password"
-                      required
-                      placeholder="Enter your current password"
-                      className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-                    />
-                  </div>
+                  <Input
+                    id={"currentPassword"}
+                    type={"password"}
+                    required={true}
+                    value={currentPassword}
+                    onChange={handlePassInputChange(setCurrentPassword)}
+                    label={"Current Password"}
+                    placeholder={"Enter your current password"}
+                  />
                 </div>
 
                 <div className="mb-2">
-                  <div className="flex items-center justify-between">
-                    <label
-                      htmlFor="newPassword"
-                      className="block text-sm/6 font-medium text-gray-900"
-                    >
-                      New Password
-                    </label>
-                  </div>
-                  <div className="mt-2">
-                    <input
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      name="newPassword"
-                      type="password"
-                      required
-                      placeholder="Enter your current password"
-                      className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-                    />
-                  </div>
+                  <Input
+                    id={"newPassword"}
+                    type={"password"}
+                    required={true}
+                    value={newPassword}
+                    onChange={handlePassInputChange(setNewPassword)}
+                    label={"New Password"}
+                    placeholder={"Enter your new password"}
+                  />
                 </div>
 
                 <div className="mb-2">
-                  <div className="flex items-center justify-between">
-                    <label
-                      htmlFor="confirmPassword"
-                      className="block text-sm/6 font-medium text-gray-900"
-                    >
-                      Confirm password
-                    </label>
-                  </div>
-                  <div className="mt-2">
-                    <input
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      name="confirmPassword"
-                      type="password"
-                      required
-                      placeholder="Enter your current password"
-                      className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-                    />
-                  </div>
+                  <Input
+                    id={"confirmPassword"}
+                    type={"password"}
+                    required={true}
+                    value={confirmPassword}
+                    onChange={handlePassInputChange(setConfirmPassword)}
+                    label={"Confirm Password"}
+                    placeholder={"Enter your new password for confirm"}
+                  />
                 </div>
 
                 <div>
@@ -323,70 +322,109 @@ const Profile = () => {
                   >
                     Change Password
                   </button>
+                  <ToastContainer
+                    position="bottom-center"
+                    autoClose={2500}
+                    hideProgressBar={true}
+                    newestOnTop={false}
+                    closeOnClick
+                    rtl={false}
+                  />
                 </div>
+                {changePassErrors.length > 0 ? (
+                  changePassErrors.map((error, index) => (
+                    <div key={index} className="text-md text-red-500 m-1 mt-3">
+                      {error.description}
+                    </div>
+                  ))
+                ) : (
+                  <></>
+                )}
               </form>
             </div>
           </div>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 md:p-8 min-h-min">
-          <h3 className="mb-4 text-xl font-semibold text-gray-900">Orders</h3>
-          {userOrders.map((order) => (
-            <div
-              key={order.id}
-              className="flex flex-wrap items-start gap-y-4 gap-x-10 border-b border-gray-200 pb-4 md:pb-5"
-            >
-              <dl className="w-1/2 sm:w-48">
-                <dt className="text-base font-medium text-gray-500">
-                  Order ID:
-                </dt>
-                <dd className="mt-1.5 text-base font-semibold text-gray-900 ">
-                  {order.id}
-                </dd>
-              </dl>
-
-              <dl className="w-1/2 sm:w-1/4 md:flex-1 lg:w-auto">
-                <dt className="text-base font-medium text-gray-500">Date:</dt>
-                <dd className="mt-1.5 text-base font-semibold text-gray-900">
-                  {dateFormatter(order.createdOnUtc)}
-                </dd>
-              </dl>
-
-              <dl className="w-1/2 sm:w-1/5 md:flex-1 lg:w-auto">
-                <dt className="text-base font-medium text-gray-500 ">Price:</dt>
-                <dd className="mt-1.5 text-base font-semibold text-gray-900">
-                  {order.amount} ₺
-                </dd>
-              </dl>
-
-              <dl className="w-1/2 sm:w-1/4 sm:flex-1 lg:w-auto">
-                <dt className="text-base font-medium text-gray-500 ">
-                  Status:
-                </dt>
-                <dd
-                  className={`me-2 mt-1.5 inline-flex shrink-0 items-center rounded px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800`}
+        <div className="py-4 md:py-8 min-h-min">
+          <h3 className="mb-4 text-2xl font-semibold text-gray-900">Orders</h3>
+          {userOrders.length > 0 ? (
+            <>
+              {userOrders.map((order) => (
+                <div
+                  key={order.id}
+                  className="flex flex-wrap items-start gap-y-4 gap-x-10 border-b border-gray-200 pb-4 md:pb-5"
                 >
-                  {order.status}
-                </dd>
-              </dl>
+                  <dl className="w-1/2 sm:w-48">
+                    <dt className="text-base font-medium text-gray-500">
+                      Order ID:
+                    </dt>
+                    <dd className="mt-1.5 text-base font-semibold text-gray-900 ">
+                      {order.id}
+                    </dd>
+                  </dl>
+
+                  <dl className="w-1/2 sm:w-1/4 md:flex-1 lg:w-auto">
+                    <dt className="text-base font-medium text-gray-500">
+                      Date:
+                    </dt>
+                    <dd className="mt-1.5 text-base font-semibold text-gray-900">
+                      {dateFormatter(order.createdOnUtc)}
+                    </dd>
+                  </dl>
+
+                  <dl className="w-1/2 sm:w-1/5 md:flex-1 lg:w-auto">
+                    <dt className="text-base font-medium text-gray-500 ">
+                      Price:
+                    </dt>
+                    <dd className="mt-1.5 text-base font-semibold text-gray-900">
+                      {order.amount} ₺
+                    </dd>
+                  </dl>
+
+                  <dl className="w-1/2 sm:w-1/4 sm:flex-1 lg:w-auto">
+                    <dt className="text-base font-medium text-gray-500 ">
+                      Status:
+                    </dt>
+                    <dd
+                      className={`me-2 mt-1.5 inline-flex shrink-0 items-center rounded px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800`}
+                    >
+                      {order.status}
+                    </dd>
+                  </dl>
+                </div>
+              ))}
+              <Pagination
+                totalPages={totalPages}
+                currentPage={currentPage}
+                onPageChange={handlePageChange}
+              />
+            </>
+          ) : (
+            <div className="text-lg text-gray-700 font-semibold">
+              You have not placed any orders yet.
             </div>
-          ))}
-          <Pagination
-            totalPages={totalPages}
-            currentPage={currentPage}
-            onPageChange={handlePageChange}
-          />
+          )}
         </div>
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-10 xl:grid-cols-3 xl:gap-x-8 mb-6 rounded-lg border border-gray-200 p-4 md:p-8 min-h-min mt-10">
-          {
-            userCourses.map(course => (
-              <div key={course.id}>
-                <CourseCard course={course}/>
+        <div className="mt-10">
+          <h3 className="mb-4 text-2xl font-semibold text-gray-900">
+            Enrolled Courses
+          </h3>
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-10 xl:grid-cols-3 xl:gap-x-8 mb-6 md:py-8 min-h-min">
+            {userCourses.length > 0 ? (
+              <>
+                {userCourses.map((course) => (
+                  <div key={course.id}>
+                    <CourseCard course={course} />
+                  </div>
+                ))}
+              </>
+            ) : (
+              <div className="col-span-2 text-lg text-gray-700 font-semibold">
+                You have not yet signed up for any course.
               </div>
-            ))
-          }
+            )}
+          </div>
         </div>
 
-        {/* Account Information Modal */}
         {isModalOpen && (
           <div className="max-h-auto left-0 right-0 top-0 z-50 flex max-h-full w-full items-center justify-center overflow-y-auto overflow-x-hidden antialiased fixed inset-0 bg-gray-500/75 transition-opacity">
             <div className="max-h-auto relative max-h-full w-full max-w-lg p-4">
@@ -408,87 +446,48 @@ const Profile = () => {
                   className="p-4 md:p-5"
                 >
                   <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="col-span-2">
-                      <div className="flex flex-col items-center justify-center">
-                        <img
-                          className="h-16 w-16 rounded-full"
-                          src={userPicture || defaultUserPic}
-                          alt={user.fullName}
-                        />
-                        <label
-                          htmlFor="dropzone-file"
-                          className="flex flex-row items-center justify-center my-5 font-semibold gap-1 py-2 px-4 cursor-pointer bg-indigo-600 text-white rounded-lg select-none"
-                        >
-                          <IoCloudUploadSharp className="w-8 h-8 text-white me-2" />
-                          Change Avatar
-                        </label>
-                        <input
-                          id="dropzone-file"
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleImageUpload}
-                        />
-                      </div>
-                    </div>
                     <div className="col-span-2 sm:col-span-1">
-                      <label className="mb-2 block text-sm font-medium text-gray-900">
-                        {" "}
-                        Your First Name*{" "}
-                      </label>
-                      <input
+                      <Input
+                        id={"firstName"}
+                        type={"text"}
+                        required={true}
                         value={formData.firstName}
                         onChange={handleInputChange}
-                        type="text"
-                        name="firstName"
-                        className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500"
-                        placeholder="Enter your first name"
-                        required
+                        label={"First Name"}
+                        placeholder={"Enter your first name"}
                       />
                     </div>
                     <div className="col-span-2 sm:col-span-1">
-                      <label className="mb-2 block text-sm font-medium text-gray-900">
-                        {" "}
-                        Your Last Name*{" "}
-                      </label>
-                      <input
+                      <Input
+                        id={"lastName"}
+                        type={"text"}
+                        required={true}
                         value={formData.lastName}
                         onChange={handleInputChange}
-                        type="text"
-                        name="lastName"
-                        className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500"
-                        placeholder="Enter your last name"
-                        required
+                        label={"Last Name"}
+                        placeholder={"Enter your last name"}
                       />
                     </div>
                     <div className="col-span-2 sm:col-span-1">
-                      <label className="mb-2 block text-sm font-medium text-gray-900">
-                        {" "}
-                        Your Email*{" "}
-                      </label>
-                      <input
+                      <Input
+                        id={"email"}
+                        type={"email"}
+                        required={true}
                         value={formData.email}
                         onChange={handleInputChange}
-                        type="email"
-                        name="email"
-                        className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500"
-                        placeholder="Enter your email here"
-                        required
+                        label={"Email"}
+                        placeholder={"Enter your email"}
                       />
                     </div>
                     <div className="col-span-2 sm:col-span-1">
-                      <label className="mb-2 block text-sm font-medium text-gray-900">
-                        {" "}
-                        Username*{" "}
-                      </label>
-                      <input
+                      <Input
+                        id={"userName"}
+                        type={"text"}
+                        required={true}
                         value={formData.userName}
                         onChange={handleInputChange}
-                        type="text"
-                        name="userName"
-                        className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500"
-                        placeholder="Enter your username here"
-                        required
+                        label={"Username"}
+                        placeholder={"Enter your username"}
                       />
                     </div>
                   </div>
@@ -499,6 +498,18 @@ const Profile = () => {
                     >
                       Save information
                     </button>
+                    {updateUserErrors.length > 0 ? (
+                      updateUserErrors.map((error, index) => (
+                        <div
+                          key={index}
+                          className="text-md text-red-500 m-1 mt-3"
+                        >
+                          {error.description}
+                        </div>
+                      ))
+                    ) : (
+                      <></>
+                    )}
                   </div>
                 </form>
               </div>
