@@ -102,7 +102,9 @@ const AuthProvider = ({ children }) => {
 
     try {
       const { exp } = jwtDecode(token);
-      const now = Date.now() / 1000;
+      const now = Math.floor(Date.now() / 1000); // Şu anki UTC zamanı (saniye cinsinden)
+
+      console.log(`Token expiration: ${exp}, Current time: ${now}, Is expired: ${exp < now}`);
       return exp < now;
     } catch (error) {
       console.error("Token decode error:", error);
