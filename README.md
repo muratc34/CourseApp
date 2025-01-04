@@ -26,3 +26,29 @@ Inveon Course App is a course sales website project.
 [Backend README](server/course-app/README.md)
 ## For run Frontend
 [Frontend README](client/README.md)
+
+## Test Users
+
+**Admin - Roles(admin, user, instructor)** <br/>
+Email: admin@admin.com<br/>
+Password: Test*123<br/>
+
+**User - Roles(user)** <br/>
+Email: murat@test.com<br/>
+Password: Test*123<br/>
+
+**Instructor - Roles(user, instructor)** <br/>
+Email: fatih@test.combr/>
+Password: Test*123<br/>
+
+**Instructor - Roles(user, instructor)** <br/>
+Email: ahmet@test.com<br/>
+Password: Test*123<br/>
+
+Note: If you change email to yours. You can see you will receive an email when your course is purchased for instructor users.
+
+## Test Iyzico Payment Cards
+```bash
+5890040000000016 Master Card (Debit)
+5526080000000006 Master Card (Credit)
+```
