@@ -34,16 +34,16 @@ Email: admin@admin.com<br/>
 Password: Test*123<br/>
 
 **User - Roles(user)** <br/>
-Email: murat@test.com<br/>
-Password: Test*123<br/>
+Email: murat@test.com <br/>
+Password: Test*123 <br/>
 
 **Instructor - Roles(user, instructor)** <br/>
-Email: fatih@test.combr/>
-Password: Test*123<br/>
+Email: fatih@test.com <br/>
+Password: Test*123 <br/>
 
 **Instructor - Roles(user, instructor)** <br/>
-Email: ahmet@test.com<br/>
-Password: Test*123<br/>
+Email: ahmet@test.com <br/>
+Password: Test*123 <br/>
 
 Note: If you change email to yours. You can see you will receive an email when your course is purchased for instructor users.
 
