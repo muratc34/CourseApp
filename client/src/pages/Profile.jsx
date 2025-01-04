@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useAuth } from "../contexts/AuthContext";
 import userApi from "../services/modules/userApi";
 import defaultUserPic from "/src/assets/default-user.png";
 import LoadingSpinner from "../components/LoadingSpinner";

@@ -19,7 +19,7 @@ const userApi = {
         return response;
     },
     getUserById: async(userId) => {
-        const response = await publicClient.get(getPutAndDeleteUserEndpoint(userId));
+        const response = await privateClient.get(getPutAndDeleteUserEndpoint(userId));
         return response;
     },
     uploadUserImage: async(userId, data) => {

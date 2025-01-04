@@ -2,13 +2,13 @@ import React, { useState } from "react";
 import authApi from "../services/modules/authApi";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import LoadingSpinner from "../components/LoadingSpinner";
+import { ToastContainer, toast } from "react-toastify";
 
 const EmailConfirm = () => {
   const [values, setValues] = useState(Array(6).fill(""));
   const [otpCode, setOtpCode] = useState();
 
-  const {user, refreshAuthToken} = useAuth();
+  const { user, refreshAuthToken } = useAuth();
   const navigate = useNavigate();
 
   const handleInput = (e, index) => {
@@ -45,26 +45,36 @@ const EmailConfirm = () => {
 
   const handleConfirm = async (e) => {
     e.preventDefault();
-    await authApi.confirmEmail({userId:user.id, token: otpCode})
-    .then(response => {
-        console.log(response)
+    await authApi
+      .confirmEmail({ userId: user.id, token: otpCode })
+      .then((response) => {
         refreshAuthToken();
-        navigate("/")
-    }).catch(error => {
+        toast.success(
+          "Email has been verified, you are being redirected to the home!"
+        );
+        setTimeout(() => {
+          navigate("/");
+        }, 1500);
+      })
+      .catch((error) => {
         console.error(error);
-    })
-  }
+        toast.error("The code is incorrect or expired");
+      });
+  };
 
-  const handleResendCode = async() => {
-    await authApi.resendEmailConfirmationToken(user.id)
-    .then((response) => {
-      console.log(response)
-    }).catch(err =>{
-      console.error(err);
-    })
-  }
+  const handleResendCode = async () => {
+    await authApi
+      .resendEmailConfirmationToken(user.id)
+      .then((response) => {
+        console.log(response);
+        toast.success("Email confirm code sended!");
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.success("Confrim code could not be sent, try again later!");
+      });
+  };
 
-  console.log(user);
   return (
     <main className="relative flex flex-col justify-center overflow-hidden mt-24">
       <div className="w-full max-w-6xl mx-auto px-4 md:px-6 py-24">
@@ -98,6 +108,16 @@ const EmailConfirm = () => {
                 >
                   Verify Email
                 </button>
+                <ToastContainer
+                  position="bottom-center"
+                  autoClose={3000}
+                  hideProgressBar={false}
+                  newestOnTop={false}
+                  closeOnClick
+                  pauseOnHover={false}
+                  pauseOnFocusLoss={false}
+                  rtl={false}
+                />
               </div>
             </form>
             <div className="text-sm text-slate-500 mt-4">

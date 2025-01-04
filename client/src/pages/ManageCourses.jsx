@@ -39,7 +39,6 @@ const ManageCourses = () => {
   const [updateCourseId, setUpdateCourseId] = useState();
   const [deleteCourseId, setDeleteCourseId] = useState();
   const [file, setFile] = useState(null);
-  const [changeImgFile, setChangeImgFile] = useState(null);
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -53,7 +52,6 @@ const ManageCourses = () => {
     const selectedFile = e.target.files[0];
     const formData = new FormData();
     formData.append("formFile", selectedFile);
-    setChangeImgFile(selectedFile);
     uploadCourseImage(course, formData, "updateImg");
   };
 
@@ -128,7 +126,7 @@ const ManageCourses = () => {
         if (file) {
           const formData = new FormData();
           formData.append("formFile", file);
-          uploadCourseImage(response.data, file, "createCourse");
+          uploadCourseImage(response.data, formData, "createCourse");
         }
         setFormData({
           name: "",
@@ -137,14 +135,12 @@ const ManageCourses = () => {
           categoryId: "",
           instructorId: "",
         });
+        setIsOpenAddModal(false);
+        getInstructorCourses();
       })
       .catch((err) => {
         console.log(err);
         setErrors(err.errors);
-      })
-      .finally(() => {
-        setIsOpenAddModal(false);
-        getInstructorCourses();
       });
   };
 
@@ -230,6 +226,7 @@ const ManageCourses = () => {
     setIsOpenDeleteModal(true);
     setDeleteCourseId(course.id);
   };
+
   const handleCloseDeleteModal = () => {
     setIsOpenDeleteModal(false);
     setDeleteCourseId(null);
@@ -246,10 +243,12 @@ const ManageCourses = () => {
         </h2>
         <ToastContainer
           position="bottom-center"
-          autoClose={3000}
+          autoClose={1500}
           hideProgressBar={false}
           newestOnTop={false}
           closeOnClick
+          pauseOnHover={false}
+          pauseOnFocusLoss={false}
           rtl={false}
         />
         <button
@@ -332,7 +331,10 @@ const ManageCourses = () => {
                 </h3>
                 <button
                   type="button"
-                  onClick={() => setIsOpenAddModal(false)}
+                  onClick={() => {setIsOpenAddModal(false);
+                    setFormData({name: "", description: "", price: "", categoryId: ""})
+                    setFile(null);
+                   }}
                   className="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900"
                 >
                   <IoClose size={24} />
@@ -436,6 +438,7 @@ const ManageCourses = () => {
                             name="categoryId"
                             value={formData.categoryId}
                             onChange={handleInputChange}
+                            required
                             className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                           >
                             <option value="" disabled>
