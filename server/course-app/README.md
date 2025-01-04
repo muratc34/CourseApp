@@ -22,7 +22,7 @@ cd .\src\API\
 dotnet run
 ````
 
-Congrualtions
+Congratulations 🎉
 Go to the this url on your browser: [https://localhost:5050/swagger/index.html](https://localhost:5050/swagger/index.html)
 
 
