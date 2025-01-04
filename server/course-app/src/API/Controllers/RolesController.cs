@@ -1,10 +1,4 @@
-﻿using API.Extensions;
-using Application.DTOs;
-using Application.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace API.Controllers
+﻿namespace API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -30,7 +24,7 @@ namespace API.Controllers
         public async Task<IActionResult> Create(RoleSaveDto dto)
         {
             var result = await _roleService.CreateRole(dto);
-            return result.IsSuccess ? CreatedAtAction(nameof(GetById), new { roleId = result.Data.Id }, result.Data) : result.ToProblemDetails();
+            return result.IsSuccess ? CreatedAtAction(nameof(GetById), new { roleId = result.Data.Id }, result) : result.ToProblemDetails();
         }
 
         [HttpDelete]

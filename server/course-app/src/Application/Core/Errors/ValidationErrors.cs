@@ -85,6 +85,10 @@ internal static class ValidationErrors
     {
         internal static Error NameIsRequired => Error.Failure("RoleSaveDto.NameIsRequired", "The name is required.");
     }
+    internal static class Course
+    {
+        internal static Error SearchNameIsRequired => Error.Failure("Course.SearchNameIsRequired", "The search name is required.");
+    }
 }
 
 

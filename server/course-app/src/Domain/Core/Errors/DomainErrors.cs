@@ -12,6 +12,8 @@ public static class DomainErrors
         public static Error CannotDelete(string message) => Error.Failure("User.CannotDelete", message);
         public static Error AlreadyEnrollment => Error.Conflict("User.AlreadyEnrollment", "The specified user is already enrollment to specified course.");
         public static Error EmailConfirmationOTPInvalid => Error.Conflict("User.EmailConfirmationOTPInvalid", "The code is incorrect or expired");
+        public static Error EmailAlreadyConfirmed => Error.Conflict("User.EmailAlreadyConfirmed", "The email is already confirmed.");
+        public static Error ProfilePictureUrlAlreadyDeleted => Error.Failure("User.ProfilePictureUrlAlreadyDeleted", "The profile picture url already deleted.");
     }
     public static class Role
     {
@@ -19,6 +21,7 @@ public static class DomainErrors
     }
     public static class Authentication
     {
+        public static Error InvalidPermissions => Error.Failure("Authentication.InvalidPermissions", "The current user does not have the permissions to perform that operation.");
         public static Error InvalidEmailOrPassword => Error.Failure("Authentication.InvalidEmailOrPassword", "The specified email or password are incorrect.");
         public static Error CannotChangePassword(string message) => Error.Failure("Authentication.CannotChangePassword", message);
     }
@@ -35,13 +38,18 @@ public static class DomainErrors
     public static class Course
     {
         public static Error NotFound => Error.NotFound("Course.NotFound", "The course is not exist.");
+        public static Error CannotUpdate(string desc) => Error.Failure("Course.CannotUpdate", desc);
+        public static Error OwnerCannotOrder => Error.Failure("Course.OwnerCannotOrder", "The course owner cannot buy the course.");
+        public static Error ImageUrlAlreadyDeleted => Error.Failure("Course.OwnerCannotOrder", "The image url already deleted.");
     }
     public static class Order
     {
-        public static Error NotFound => Error.NotFound("Course.NotFound", "The order is not exist.");
+        public static Error NotFound => Error.NotFound("Order.NotFound", "The order is not exist.");
+        public static Error AlreadyOrdered => Error.Conflict("Order.AlreadyOrdered", "The course is already ordered.");
     }
     public static class Payment
     {
         public static Error AlreadyPaid => Error.Failure("Payment.AlreadyPaid", "The order has already been paid for.");
+        public static Error Failed => Error.Failure("Payment.Failed", "The payment failed.");
     }
 }

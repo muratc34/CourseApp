@@ -4,6 +4,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace Infrastructure.Migrations
 {
     /// <inheritdoc />
@@ -331,6 +333,42 @@ namespace Infrastructure.Migrations
                         principalTable: "Orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.InsertData(
+                table: "AspNetRoles",
+                columns: new[] { "Id", "ConcurrencyStamp", "CreatedOnUtc", "ModifiedOnUtc", "Name", "NormalizedName" },
+                values: new object[,]
+                {
+                    { new Guid("01900306-86f4-42ea-b2a1-9a18b9f06fd6"), null, 0L, null, "instructor", "INSTRUCTOR" },
+                    { new Guid("461d2893-2a2e-417f-8def-979b92407928"), null, 0L, null, "admin", "ADMIN" },
+                    { new Guid("ee245613-d7f0-4674-bf95-e7e9222d2a22"), null, 0L, null, "user", "USER" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "AspNetUsers",
+                columns: new[] { "Id", "AccessFailedCount", "ConcurrencyStamp", "CreatedOnUtc", "Email", "EmailConfirmed", "FirstName", "LastName", "LockoutEnabled", "LockoutEnd", "ModifiedOnUtc", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "ProfilePictureUrl", "SecurityStamp", "TwoFactorEnabled", "UserName" },
+                values: new object[,]
+                {
+                    { new Guid("0fc06ae2-5324-4650-8e2f-ea6c3ca1e818"), 0, "8b48aee7-13b0-460a-a29d-ab66e56b09b8", 0L, "murat@test.com", true, "Murat", "Cinek", false, null, null, null, null, null, null, false, null, null, false, "muratcinek" },
+                    { new Guid("980ab81f-b1c6-46a6-9227-ff9ecc34f248"), 0, "968aed3f-b9c5-4723-9e89-6f824ad8c530", 0L, "ahmet@test.com", true, "Ahmet", "Kaya", false, null, null, null, null, null, null, false, null, null, false, "instructor2" },
+                    { new Guid("d41787ad-8a6b-4a3b-8ece-b19494441dc7"), 0, "e2a67545-6194-4b5d-a439-ed56bdf11462", 0L, "admin@admin.com", true, "System", "Administrator", false, null, null, null, null, null, null, false, null, null, false, "admin" },
+                    { new Guid("e7406c25-f540-4048-a0ca-f84804d3043a"), 0, "182b301e-1fdd-4d0d-8fd3-40ccbd1f5c30", 0L, "fatih@test.com", true, "Fatih", "Çakıroğlu", false, null, null, null, null, null, null, false, null, null, false, "instructor1" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "AspNetUserRoles",
+                columns: new[] { "RoleId", "UserId" },
+                values: new object[,]
+                {
+                    { new Guid("ee245613-d7f0-4674-bf95-e7e9222d2a22"), new Guid("0fc06ae2-5324-4650-8e2f-ea6c3ca1e818") },
+                    { new Guid("01900306-86f4-42ea-b2a1-9a18b9f06fd6"), new Guid("980ab81f-b1c6-46a6-9227-ff9ecc34f248") },
+                    { new Guid("ee245613-d7f0-4674-bf95-e7e9222d2a22"), new Guid("980ab81f-b1c6-46a6-9227-ff9ecc34f248") },
+                    { new Guid("01900306-86f4-42ea-b2a1-9a18b9f06fd6"), new Guid("d41787ad-8a6b-4a3b-8ece-b19494441dc7") },
+                    { new Guid("461d2893-2a2e-417f-8def-979b92407928"), new Guid("d41787ad-8a6b-4a3b-8ece-b19494441dc7") },
+                    { new Guid("ee245613-d7f0-4674-bf95-e7e9222d2a22"), new Guid("d41787ad-8a6b-4a3b-8ece-b19494441dc7") },
+                    { new Guid("01900306-86f4-42ea-b2a1-9a18b9f06fd6"), new Guid("e7406c25-f540-4048-a0ca-f84804d3043a") },
+                    { new Guid("ee245613-d7f0-4674-bf95-e7e9222d2a22"), new Guid("e7406c25-f540-4048-a0ca-f84804d3043a") }
                 });
 
             migrationBuilder.CreateIndex(

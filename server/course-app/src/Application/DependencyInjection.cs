@@ -1,7 +1,4 @@
-﻿using Application.FluentValidations;
-using FluentValidation;
-
-namespace Application;
+﻿namespace Application;
 
 public static class DependencyInjection
 {
@@ -24,9 +21,7 @@ public static class DependencyInjection
         services.AddScoped<IValidator<OrderCreateDto>, OrderCreateDtoValidator>();
         services.AddScoped<IValidator<PaymentCreateDto>, PaymentCreateDtoValidator>();
         services.AddScoped<IValidator<UserCreateDto>, UserCreateDtoValidator>();
-        services.AddScoped<IValidator<UserUpdateDto>, UserUpdateDtoValidator>();
         services.AddScoped<IValidator<RoleSaveDto>, RoleSaveDtoValidator>();
-
 
         return services;
     }

@@ -1,7 +1,4 @@
-﻿using Application.Abstractions.Iyzico;
-using FluentValidation;
-
-namespace Application.Services;
+﻿namespace Application.Services;
 
 public interface IPaymentService
 {
@@ -17,6 +14,8 @@ internal class PaymentService : IPaymentService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IValidator<PaymentCreateDto> _paymentCreateDtoValidator;
     private readonly ICourseService _courseService;
+    private readonly IEventPublisher _eventPublisher;
+    private readonly IUserContext _userContext;
 
     public PaymentService(
         IPaymentRepository paymentRepository, 
@@ -25,7 +24,9 @@ internal class PaymentService : IPaymentService
         UserManager<ApplicationUser> userManager,
         IUnitOfWork unitOfWork,
         IValidator<PaymentCreateDto> paymentCreateDtoValidator,
-        ICourseService courseService)
+        ICourseService courseService,
+        IEventPublisher eventPublisher,
+        IUserContext userContext)
     {
         _paymentRepository = paymentRepository;
         _iyzicoService = iyzicoService;
@@ -34,6 +35,8 @@ internal class PaymentService : IPaymentService
         _unitOfWork = unitOfWork;
         _paymentCreateDtoValidator = paymentCreateDtoValidator;
         _courseService = courseService;
+        _eventPublisher = eventPublisher;
+        _userContext = userContext;
     }
 
     public async Task<Result<PaymentDto>> Create(PaymentCreateDto paymentCreateDto)
@@ -49,12 +52,16 @@ internal class PaymentService : IPaymentService
         {
             return Result.Failure<PaymentDto>(DomainErrors.Order.NotFound);
         }
+        if(order.User.Id == Guid.Empty || order.User.Id != _userContext.UserId)
+        {
+            return Result.Failure<PaymentDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
         if (order.Status == OrderStatuses.Completed)
         {
             return Result.Failure<PaymentDto>(DomainErrors.Payment.AlreadyPaid);
         }
 
-        var user = await _userManager.FindByIdAsync(order.UserId.ToString());
+        var user = await _userManager.FindByIdAsync(order.User.Id.ToString());
         var basketItems = new List<BasketItemDto>();
         foreach (var item in order.Courses)
         {
@@ -84,20 +91,36 @@ internal class PaymentService : IPaymentService
     {
         var confirm = await _iyzicoService.ConfirmPayment(token);
         var order = await _orderService.GetOrderById(new Guid(confirm.BasketId));
-        if (order == null)
+        if (order == null || order.Data == null)
         {
             return Result.Failure(DomainErrors.Order.NotFound);
+        }
+        if (order.Data.User.Id == Guid.Empty || order.Data.User.Id != _userContext.UserId)
+        {
+            return Result.Failure<PaymentDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
+        if (!confirm.PaymentStatus.Equals("SUCCESS"))
+        {
+            await _orderService.UpdateStatusAsFailed(order.Data.Id);
+            return Result.Failure(DomainErrors.Payment.Failed);
+
         }
         await _orderService.UpdateStatusAsCompleted(order.Data.Id);
 
         foreach (var course in order.Data.Courses)
         {
-            await _courseService.RegisterUserToCourse(course.Id, order.Data.UserId);
+            await _courseService.RegisterUserToCourse(course.Id, order.Data.User.Id);
         }
 
         var payment = Payment.Create(new Guid(confirm.BasketId), confirm.PaymentReference, Convert.ToDecimal(confirm.PaidPrice));
         await _paymentRepository.CreateAsync(payment);
         await _unitOfWork.SaveChangesAsync();
+
+        foreach (var course in order.Data.Courses)
+        {
+            var coursePurchaseEvent = new CoursePurchasedEvent(course.Name, order.Data.User.FullName, course.User.FullName, course.User.Email);
+            await _eventPublisher.PublishAsync(coursePurchaseEvent);
+        }
         return Result.Success();
     }
 }

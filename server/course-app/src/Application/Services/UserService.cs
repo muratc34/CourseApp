@@ -1,8 +1,4 @@
-﻿using Application.Abstractions.Messaging;
-using Domain.Events;
-using FluentValidation;
-
-namespace Application.Services;
+﻿namespace Application.Services;
 
 public interface IUserService
 {
@@ -12,6 +8,8 @@ public interface IUserService
     Task<Result> DeleteAsync(Guid userId);
     Task<Result> AddRoleToUser(Guid userId, Guid roleId);
     Task<Result> RemoveRoleFromUser(Guid userId, Guid roleId);
+    Task<Result> UpdateUserPicture(Guid userId, string fileExtension, byte[] fileData, CancellationToken cancellationToken);
+    Task<Result> RemoveUserPicture(Guid userId, CancellationToken cancellationToken);
 }
 
 public class UserService : IUserService
@@ -19,30 +17,33 @@ public class UserService : IUserService
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly IValidator<UserCreateDto> _userCreateDtoValidator;
-    private readonly IValidator<UserUpdateDto> _userUpdateDtoValidator;
     private readonly IEventPublisher _eventPublisher;
     private readonly IJwtProvider _jwtProvider;
     private readonly IRepository<RefreshToken> _refreshTokenRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IBlobStorageService _blobStorageService;
+    private readonly IUserContext _userContext;
 
     public UserService(
         UserManager<ApplicationUser> userManager,
         RoleManager<ApplicationRole> roleManager, 
-        IValidator<UserCreateDto> userCreateDtoValidator, 
-        IValidator<UserUpdateDto> userUpdateDtoValidator,
+        IValidator<UserCreateDto> userCreateDtoValidator,
         IEventPublisher eventPublisher,
         IJwtProvider jwtProvider,
         IRepository<RefreshToken> refreshTokenRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IBlobStorageService blobStorageService,
+        IUserContext userContext)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _userCreateDtoValidator = userCreateDtoValidator;
-        _userUpdateDtoValidator = userUpdateDtoValidator;
         _eventPublisher = eventPublisher;
         _jwtProvider = jwtProvider;
         _unitOfWork = unitOfWork;
         _refreshTokenRepository = refreshTokenRepository;
+        _blobStorageService = blobStorageService;
+        _userContext = userContext;
     }
 
     public async Task<Result<AccessToken>> CreateAsync(UserCreateDto userCreateDto)
@@ -54,7 +55,7 @@ public class UserService : IUserService
             return Result.Failure<AccessToken>(errors);
         }
 
-        var user = ApplicationUser.Create(userCreateDto.FirstName, userCreateDto.LastName, userCreateDto.Email, userCreateDto.UserName, userCreateDto.ProfilePictureUrl);
+        var user = ApplicationUser.Create(userCreateDto.FirstName, userCreateDto.LastName, userCreateDto.Email, userCreateDto.UserName);
         var result = await _userManager.CreateAsync(user, userCreateDto.Password);
 
         if(!result.Succeeded)
@@ -92,23 +93,25 @@ public class UserService : IUserService
         {
             return Result.Failure<UserDto>(DomainErrors.User.NotFound(userId));
         }
+        if(user.Id != _userContext.UserId)
+        {
+            return Result.Failure<UserDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
         return Result.Success(new UserDto(user.Id, user.CreatedOnUtc, user.FullName, user.Email, user.UserName, user.ProfilePictureUrl));
     }
 
     public async Task<Result> UpdateAsync(Guid userId, UserUpdateDto userUpdateDto)
     {
-        var validationResult = await _userUpdateDtoValidator.ValidateAsync(userUpdateDto);
-        if (!validationResult.IsValid)
+        if (userId != _userContext.UserId)
         {
-            var errors = validationResult.Errors.Select(x => DomainErrors.User.CannotCreate(x.ErrorMessage)).ToList();
-            return Result.Failure<UserDto>(errors);
+            return Result.Failure<UserDto>(DomainErrors.Authentication.InvalidPermissions);
         }
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user is null)
         {
             return Result.Failure<UserDto>(DomainErrors.User.NotFound(userId));
         }
-        user.Update(userUpdateDto.FirstName,userUpdateDto.LastName, userUpdateDto.Email, userUpdateDto.UserName, userUpdateDto.ProfilePictureUrl);
+        user.Update(userUpdateDto.FirstName,userUpdateDto.LastName, userUpdateDto.Email, userUpdateDto.UserName);
         var result = await _userManager.UpdateAsync(user);
         if (!result.Succeeded)
         {
@@ -122,6 +125,10 @@ public class UserService : IUserService
 
     public async Task<Result> DeleteAsync(Guid userId)
     {
+        if (userId != _userContext.UserId)
+        {
+            return Result.Failure<UserDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user is null)
         {
@@ -181,6 +188,64 @@ public class UserService : IUserService
                 .ToList();
             return Result.Failure(errors);
         }
+        return Result.Success();
+    }
+
+    public async Task<Result> UpdateUserPicture(Guid userId, string fileExtension, byte[] fileData, CancellationToken cancellationToken)
+    {
+        if (userId != _userContext.UserId)
+        {
+            return Result.Failure<UserDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+        {
+            return Result.Failure<UserDto>(DomainErrors.User.NotFound(userId));
+        }
+        var url = await _blobStorageService.UploadUserImageFileAsync(user.Id, fileExtension, fileData, cancellationToken);
+        user.UpdateUserProfilePictureUrl(url);
+
+        var result = await _userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            var errors = result.Errors
+                .Select(x => DomainErrors.User.CannotUpdate(x.Description))
+                .ToList();
+            return Result.Failure(errors);
+        }
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        return Result.Success();
+    }
+
+    public async Task<Result> RemoveUserPicture(Guid userId, CancellationToken cancellationToken)
+    {
+        if (userId != _userContext.UserId)
+        {
+            return Result.Failure<UserDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+        {
+            return Result.Failure<UserDto>(DomainErrors.User.NotFound(userId));
+        }
+        if (string.IsNullOrEmpty(user.ProfilePictureUrl))
+        {
+            return Result.Failure(DomainErrors.User.ProfilePictureUrlAlreadyDeleted);
+        }
+
+        await _blobStorageService.RemoveUserImageAsync(userId, user.ProfilePictureUrl, cancellationToken);
+        user.UpdateUserProfilePictureUrl(string.Empty);
+
+        var result = await _userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            var errors = result.Errors
+                .Select(x => DomainErrors.User.CannotUpdate(x.Description))
+                .ToList();
+            return Result.Failure(errors);
+        }
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }
 }

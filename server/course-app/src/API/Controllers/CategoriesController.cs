@@ -1,10 +1,4 @@
-﻿using API.Extensions;
-using Application.DTOs;
-using Application.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace API.Controllers;
+﻿namespace API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -22,7 +16,7 @@ public class CategoriesController : ControllerBase
     public async Task<IActionResult> Create(CategorySaveDto categoryCreateDto)
     {
         var result = await _categoryService.Create(categoryCreateDto);
-        return result.IsSuccess ? CreatedAtAction(nameof(result.Data.Id), new { categoryId = result.Data.Id}, result.Data) : result.ToProblemDetails();
+        return result.IsSuccess ? CreatedAtAction(nameof(GetById), new { categoryId = result.Data.Id}, result) : result.ToProblemDetails();
     }
 
     [HttpPut]
@@ -47,5 +41,13 @@ public class CategoriesController : ControllerBase
     public async Task<IActionResult> Get(CancellationToken cancellationToekn)
     {
         return Ok(await _categoryService.GetCategories(cancellationToekn));
+    }
+
+    [HttpGet]
+    [Route("{categoryId}")]
+    public async Task<IActionResult> GetById(Guid categoryId)
+    {
+        var result = await _categoryService.GetCategoryById(categoryId);
+        return result.IsSuccess ? Ok(result) : result.ToProblemDetails();
     }
 }

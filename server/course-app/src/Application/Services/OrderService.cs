@@ -1,16 +1,13 @@
-﻿using Application.Abstractions.Caching;
-using Application.Abstractions.Caching.Constants;
-using FluentValidation;
-
-namespace Application.Services;
+﻿namespace Application.Services;
 
 public interface IOrderService
 {
     Task<Result<OrderDto>> Create(OrderCreateDto orderCreateDto);
     Task<Result> Delete(Guid orderId);
-    Task<Result<List<OrderDetailDto>>> GetOrdersByUserId(Guid userId, CancellationToken cancellationToken);
+    Task<Result<PagedList<OrderDetailDto>>> GetOrdersByUserId(Guid userId, int pageIndex, int pageSize, CancellationToken cancellationToken);
     Task<Result<OrderDetailDto>> GetOrderById(Guid orderId);
     Task<Result> UpdateStatusAsCompleted(Guid orderId);
+    Task<Result> UpdateStatusAsFailed(Guid orderId);
 }
 internal class OrderService : IOrderService
 {
@@ -19,7 +16,7 @@ internal class OrderService : IOrderService
     private readonly IUnitOfWork _unitOfWork;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IValidator<OrderCreateDto> _orderCreateDtoValidator;
-    private readonly ICacheService _cacheService;
+    private readonly IUserContext _userContext;
 
     public OrderService(
         IOrderRepository orderRepository,
@@ -27,18 +24,22 @@ internal class OrderService : IOrderService
         IUnitOfWork unitOfWork,
         UserManager<ApplicationUser> userManager,
         IValidator<OrderCreateDto> orderCreateDtoValidator,
-        ICacheService cacheService)
+        IUserContext userContext)
     {
         _orderRepository = orderRepository;
         _courseService = courseService;
         _unitOfWork = unitOfWork;
         _userManager = userManager;
         _orderCreateDtoValidator = orderCreateDtoValidator;
-        _cacheService = cacheService;
+        _userContext = userContext;
     }
 
     public async Task<Result<OrderDto>> Create(OrderCreateDto orderCreateDto)
     {
+        if (orderCreateDto.UserId == Guid.Empty || orderCreateDto.UserId != _userContext.UserId)
+        {
+            return Result.Failure<OrderDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
         var validationResult = await _orderCreateDtoValidator.ValidateAsync(orderCreateDto);
         if (!validationResult.IsValid)
         {
@@ -59,16 +60,27 @@ internal class OrderService : IOrderService
             {
                 return Result.Failure<OrderDto>(DomainErrors.Course.NotFound);
             }
+            if(course.Data.User.Id == user.Id)
+            {
+                return Result.Failure<OrderDto>(DomainErrors.Course.OwnerCannotOrder);
+            }
             if(user.Enrollments.Any(x => x.CourseId == courseId))
             {
                 return Result.Failure<OrderDto>(DomainErrors.User.AlreadyEnrollment);
             }
+            var hasPreviousOrder = await _orderRepository.FindAll()
+                .Where(x => x.UserId == user.Id && (x.Status != OrderStatuses.Cancelled || x.Status != OrderStatuses.Failed || x.Status != OrderStatuses.Refunded))
+                .AnyAsync(x => x.OrderDetails.Any(o => o.CourseId == courseId));
+            if (hasPreviousOrder)
+            {
+                return Result.Failure<OrderDto>(DomainErrors.Order.AlreadyOrdered);
+            }
+
             order.OrderDetails.Add(new OrderDetail(courseId, order.Id));
         }
 
         await _orderRepository.CreateAsync(order);
         await _unitOfWork.SaveChangesAsync();
-        await _cacheService.RemoveAsync(CachingKeys.OrdersByUserIdKey(order.UserId));
         return Result.Success(new OrderDto(order.Id, order.CreatedOnUtc, order.ModifiedOnUtc, order.UserId, order.Status, order.City, order.Country, order.Address, order.ZipCode, order.TcNo));
     }
 
@@ -79,31 +91,30 @@ internal class OrderService : IOrderService
         {
             return Result.Failure(DomainErrors.Order.NotFound);
         }
+        if (order.UserId == Guid.Empty || order.UserId != _userContext.UserId)
+        {
+            return Result.Failure<OrderDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
 
         order.SetStatusAsCancelled();
         _orderRepository.Delete(order);
         await _unitOfWork.SaveChangesAsync();
 
-        await _cacheService.RemoveAsync(CachingKeys.OrdersByUserIdKey(order.UserId));
-        await _cacheService.RemoveAsync(CachingKeys.OrdersByIdKey(order.Id));
         return Result.Success();
     }
 
-    public async Task<Result<List<OrderDetailDto>>> GetOrdersByUserId(Guid userId, CancellationToken cancellationToken)
+    public async Task<Result<PagedList<OrderDetailDto>>> GetOrdersByUserId(Guid userId, int pageIndex, int pageSize, CancellationToken cancellationToken)
     {
-        var cachedOrders = await _cacheService.GetAsync<List<OrderDetailDto>>(CachingKeys.OrdersByUserIdKey(userId));
-        if (cachedOrders is not null)
+        if (userId == Guid.Empty || userId != _userContext.UserId)
         {
-            return Result.Success(cachedOrders);
+            return Result.Failure<PagedList<OrderDetailDto>>(DomainErrors.Authentication.InvalidPermissions);
         }
-        
-        var orders = await _orderRepository.FindAll()
-            .Where(x => x.UserId == userId)
-            .Select(x => new OrderDetailDto(
+        var pagedOrders = await _orderRepository.GetAllByPagingAsync(pageIndex, pageSize, cancellationToken,
+            x => new OrderDetailDto(
                 x.Id,
                 x.CreatedOnUtc,
                 x.ModifiedOnUtc,
-                x.UserId,
+                new UserDto(x.User.Id, x.User.CreatedOnUtc, x.User.FullName, x.User.Email, x.User.UserName, x.User.ProfilePictureUrl),
                 x.Status,
                 x.OrderDetails.Select(oc => new CourseDetailDto(
                     oc.Course.Id,
@@ -113,7 +124,7 @@ internal class OrderService : IOrderService
                     oc.Course.Description,
                     oc.Course.Price,
                     oc.Course.ImageUrl,
-                    new CategoryDto(                        
+                    new CategoryDto(
                         oc.Course.Category.Id,
                         oc.Course.Category.CreatedOnUtc,
                         oc.Course.Category.ModifiedOnUtc,
@@ -131,27 +142,30 @@ internal class OrderService : IOrderService
                 x.Country,
                 x.Address,
                 x.ZipCode,
-                x.TcNo
-            )
-        ).ToListAsync(cancellationToken);
-
-        await _cacheService.SetAsync(CachingKeys.OrdersByUserIdKey(userId), orders, TimeSpan.FromMinutes(60));
-        return Result.Success(orders);
+                x.TcNo,
+                x.OrderDetails.Sum(od => od.Course.Price)
+            ),x => x.UserId == userId, x => x.OrderByDescending(o => o.CreatedOnUtc));
+        
+        return Result.Success(pagedOrders);
     }
 
     public async Task<Result<OrderDetailDto>> GetOrderById(Guid orderId)
     {
-        var cachedOrders = await _cacheService.GetAsync<OrderDetailDto>(CachingKeys.OrdersByIdKey(orderId));
-        if (cachedOrders is not null)
+        var isExistorder = _orderRepository.Find(x => x.Id == orderId);
+        if (isExistorder is null)
         {
-            return Result.Success(cachedOrders);
+            return Result.Failure<OrderDetailDto>(DomainErrors.Order.NotFound);
         }
-        var order = await _orderRepository.Find(x => x.Id == orderId)
-            .Select(x => new OrderDetailDto(
+        if (isExistorder.First().UserId == Guid.Empty || isExistorder.First().UserId != _userContext.UserId)
+        {
+            return Result.Failure<OrderDetailDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
+
+        var order = await isExistorder.Select(x => new OrderDetailDto(
                 x.Id ,
                 x.CreatedOnUtc, 
                 x.ModifiedOnUtc,
-                x.UserId, 
+                new UserDto(x.User.Id, x.User.CreatedOnUtc, x.User.FullName, x.User.Email, x.User.UserName, x.User.ProfilePictureUrl), 
                 x.Status, 
                 x.OrderDetails.Select(oc => new CourseDetailDto(
                     oc.Course.Id,
@@ -179,13 +193,9 @@ internal class OrderService : IOrderService
                 x.Country,
                 x.Address,
                 x.ZipCode,
-                x.TcNo)).FirstAsync();
-
-        if (order is null)
-        {
-            return Result.Failure<OrderDetailDto>(DomainErrors.Order.NotFound);
-        }
-        await _cacheService.SetAsync(CachingKeys.OrdersByIdKey(order.Id), order, TimeSpan.FromMinutes(60));
+                x.TcNo,
+                x.OrderDetails.Sum(od => od.Course.Price))).FirstAsync();
+        
         return Result.Success(order);
     }
 
@@ -200,8 +210,20 @@ internal class OrderService : IOrderService
         order.SetStatusAsCompleted();
         await _unitOfWork.SaveChangesAsync();
 
-        await _cacheService.RemoveAsync(CachingKeys.OrdersByUserIdKey(order.UserId));
-        await _cacheService.RemoveAsync(CachingKeys.OrdersByIdKey(order.Id));
+        return Result.Success();
+    }
+
+    public async Task<Result> UpdateStatusAsFailed(Guid orderId)
+    {
+        var order = await _orderRepository.GetAsync(x => x.Id == orderId);
+        if (order is null)
+        {
+            return Result.Failure(DomainErrors.Order.NotFound);
+        }
+
+        order.SetStatusAsFailed();
+        await _unitOfWork.SaveChangesAsync();
+
         return Result.Success();
     }
 }

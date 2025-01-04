@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Iyzıco.Settings;
+﻿namespace Infrastructure.Iyzico.Settings;
 
 public class IyzicoSettings
 {

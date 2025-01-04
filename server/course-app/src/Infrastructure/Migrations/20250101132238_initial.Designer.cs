@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20241229204856_initial")]
+    [Migration("20250101132238_initial")]
     partial class initial
     {
         /// <inheritdoc />
@@ -92,6 +92,29 @@ namespace Infrastructure.Migrations
                         .HasDatabaseName("RoleNameIndex");
 
                     b.ToTable("AspNetRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("461d2893-2a2e-417f-8def-979b92407928"),
+                            CreatedOnUtc = 0L,
+                            Name = "admin",
+                            NormalizedName = "ADMIN"
+                        },
+                        new
+                        {
+                            Id = new Guid("ee245613-d7f0-4674-bf95-e7e9222d2a22"),
+                            CreatedOnUtc = 0L,
+                            Name = "user",
+                            NormalizedName = "USER"
+                        },
+                        new
+                        {
+                            Id = new Guid("01900306-86f4-42ea-b2a1-9a18b9f06fd6"),
+                            CreatedOnUtc = 0L,
+                            Name = "instructor",
+                            NormalizedName = "INSTRUCTOR"
+                        });
                 });
 
             modelBuilder.Entity("Domain.Entities.ApplicationUser", b =>
@@ -179,6 +202,68 @@ namespace Infrastructure.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("d41787ad-8a6b-4a3b-8ece-b19494441dc7"),
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "e2a67545-6194-4b5d-a439-ed56bdf11462",
+                            CreatedOnUtc = 0L,
+                            Email = "admin@admin.com",
+                            EmailConfirmed = true,
+                            FirstName = "System",
+                            LastName = "Administrator",
+                            LockoutEnabled = false,
+                            PhoneNumberConfirmed = false,
+                            TwoFactorEnabled = false,
+                            UserName = "admin"
+                        },
+                        new
+                        {
+                            Id = new Guid("0fc06ae2-5324-4650-8e2f-ea6c3ca1e818"),
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "8b48aee7-13b0-460a-a29d-ab66e56b09b8",
+                            CreatedOnUtc = 0L,
+                            Email = "murat@test.com",
+                            EmailConfirmed = true,
+                            FirstName = "Murat",
+                            LastName = "Cinek",
+                            LockoutEnabled = false,
+                            PhoneNumberConfirmed = false,
+                            TwoFactorEnabled = false,
+                            UserName = "muratcinek"
+                        },
+                        new
+                        {
+                            Id = new Guid("e7406c25-f540-4048-a0ca-f84804d3043a"),
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "182b301e-1fdd-4d0d-8fd3-40ccbd1f5c30",
+                            CreatedOnUtc = 0L,
+                            Email = "fatih@test.com",
+                            EmailConfirmed = true,
+                            FirstName = "Fatih",
+                            LastName = "Çakıroğlu",
+                            LockoutEnabled = false,
+                            PhoneNumberConfirmed = false,
+                            TwoFactorEnabled = false,
+                            UserName = "instructor1"
+                        },
+                        new
+                        {
+                            Id = new Guid("980ab81f-b1c6-46a6-9227-ff9ecc34f248"),
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "968aed3f-b9c5-4723-9e89-6f824ad8c530",
+                            CreatedOnUtc = 0L,
+                            Email = "ahmet@test.com",
+                            EmailConfirmed = true,
+                            FirstName = "Ahmet",
+                            LastName = "Kaya",
+                            LockoutEnabled = false,
+                            PhoneNumberConfirmed = false,
+                            TwoFactorEnabled = false,
+                            UserName = "instructor2"
+                        });
                 });
 
             modelBuilder.Entity("Domain.Entities.Category", b =>
@@ -472,6 +557,48 @@ namespace Infrastructure.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUserRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            UserId = new Guid("d41787ad-8a6b-4a3b-8ece-b19494441dc7"),
+                            RoleId = new Guid("461d2893-2a2e-417f-8def-979b92407928")
+                        },
+                        new
+                        {
+                            UserId = new Guid("d41787ad-8a6b-4a3b-8ece-b19494441dc7"),
+                            RoleId = new Guid("ee245613-d7f0-4674-bf95-e7e9222d2a22")
+                        },
+                        new
+                        {
+                            UserId = new Guid("d41787ad-8a6b-4a3b-8ece-b19494441dc7"),
+                            RoleId = new Guid("01900306-86f4-42ea-b2a1-9a18b9f06fd6")
+                        },
+                        new
+                        {
+                            UserId = new Guid("0fc06ae2-5324-4650-8e2f-ea6c3ca1e818"),
+                            RoleId = new Guid("ee245613-d7f0-4674-bf95-e7e9222d2a22")
+                        },
+                        new
+                        {
+                            UserId = new Guid("e7406c25-f540-4048-a0ca-f84804d3043a"),
+                            RoleId = new Guid("ee245613-d7f0-4674-bf95-e7e9222d2a22")
+                        },
+                        new
+                        {
+                            UserId = new Guid("e7406c25-f540-4048-a0ca-f84804d3043a"),
+                            RoleId = new Guid("01900306-86f4-42ea-b2a1-9a18b9f06fd6")
+                        },
+                        new
+                        {
+                            UserId = new Guid("980ab81f-b1c6-46a6-9227-ff9ecc34f248"),
+                            RoleId = new Guid("ee245613-d7f0-4674-bf95-e7e9222d2a22")
+                        },
+                        new
+                        {
+                            UserId = new Guid("980ab81f-b1c6-46a6-9227-ff9ecc34f248"),
+                            RoleId = new Guid("01900306-86f4-42ea-b2a1-9a18b9f06fd6")
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>

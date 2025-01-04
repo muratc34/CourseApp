@@ -1,19 +1,18 @@
-﻿using Application.Abstractions.Caching;
-using Application.Abstractions.Caching.Constants;
-using FluentValidation;
-
-namespace Application.Services;
-
-
+﻿namespace Application.Services;
 public interface ICourseService
 {
     Task<Result<CourseDto>> Create(CourseCreateDto courseCreateDto);
     Task<Result> Update(Guid courseId, CourseUpdateDto courseUpdateDto);
     Task<Result> Delete(Guid courseId);
-    Task<Result<List<CourseDto>>> GetCourses(CancellationToken cancellationToken);
+    Task<Result<PagedList<CourseDetailDto>>> GetCourses(int pageIndex, int pageSize, CancellationToken cancellationToken);
     Task<Result<CourseDetailDto>> GetCourseById(Guid courseId);
-    Task<Result<List<CourseDetailDto>>> GetCourseByCategoryId(Guid categoryId, CancellationToken cancellationToken);
+    Task<Result<PagedList<CourseDetailDto>>> GetCourseByCategoryId(Guid categoryId, int pageIndex, int pageSize, CancellationToken cancellationToken);
     Task<Result> RegisterUserToCourse(Guid courseId, Guid userId);
+    Task<Result<List<CourseDetailDto>>> GetCoursesByEnrollmentUserId(Guid userId, CancellationToken cancellationToken);
+    Task<Result<List<CourseDetailDto>>> GetCoursesByInstructorId(Guid userId, CancellationToken cancellationToken);
+    Task<Result> UpdateCourseImage(Guid courseId, string fileExtension, byte[] fileData, CancellationToken cancellationToken);
+    Task<Result> RemoveCourseImage(Guid courseId, CancellationToken cancellationToken);
+    Task<Result<List<CourseDetailDto>>> SearchCoursesByName(string searchName, CancellationToken cancellationToken); 
 }
 
 public class CourseService : ICourseService
@@ -24,7 +23,8 @@ public class CourseService : ICourseService
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IValidator<CourseCreateDto> _courseCreateDtoValidator;
     private readonly IValidator<CourseUpdateDto> _courseUpdateDtoValidator;
-    private readonly ICacheService _cacheService;
+    private readonly IBlobStorageService _blobStorageService;
+    private readonly IUserContext _userContext;
 
     public CourseService(
         ICourseRepository courseRepository,
@@ -33,7 +33,8 @@ public class CourseService : ICourseService
         UserManager<ApplicationUser> userManager,
         IValidator<CourseCreateDto> courseCreateDtoValidator,
         IValidator<CourseUpdateDto> courseUpdateDtoValidator,
-        ICacheService cacheService)
+        IBlobStorageService blobStorageService,
+        IUserContext userContext)
     {
         _courseRepository = courseRepository;
         _unitOfWork = unitOfWork;
@@ -41,11 +42,17 @@ public class CourseService : ICourseService
         _userManager = userManager;
         _courseCreateDtoValidator = courseCreateDtoValidator;
         _courseUpdateDtoValidator = courseUpdateDtoValidator;
-        _cacheService = cacheService;
+        _blobStorageService = blobStorageService;
+        _userContext = userContext;
     }
 
     public async Task<Result<CourseDto>> Create(CourseCreateDto courseCreateDto)
     {
+        if (courseCreateDto.InstructorId == Guid.Empty || courseCreateDto.InstructorId != _userContext.UserId)
+        {
+            return Result.Failure<CourseDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
+
         var validationResult = await _courseCreateDtoValidator.ValidateAsync(courseCreateDto);
         if (!validationResult.IsValid)
         {
@@ -59,14 +66,10 @@ public class CourseService : ICourseService
             return Result.Failure<CourseDto>(DomainErrors.Category.NotFound);
         }
 
-        var course = Course.Create(courseCreateDto.Name, courseCreateDto.Description, courseCreateDto.Price, courseCreateDto.ImageUrl, courseCreateDto.CategoryId, courseCreateDto.InstructorId);
+        var course = Domain.Entities.Course.Create(courseCreateDto.Name, courseCreateDto.Description, courseCreateDto.Price, courseCreateDto.CategoryId, courseCreateDto.InstructorId);
 
         await _courseRepository.CreateAsync(course);
         await _unitOfWork.SaveChangesAsync();
-
-        await _cacheService.RemoveAsync(CachingKeys.CoursesKey);
-        await _cacheService.RemoveAsync(CachingKeys.CoursesByCagetoryIdKey(course.CategoryId));
-
         return Result.Success(new CourseDto(course.Id, course.CreatedOnUtc, course.ModifiedOnUtc, course.Name, course.Description, course.Price, course.ImageUrl, course.CategoryId, course.InstructorId));
     }
 
@@ -77,32 +80,26 @@ public class CourseService : ICourseService
         {
             return Result.Failure(DomainErrors.Course.NotFound);
         }
+        if (course.InstructorId == Guid.Empty || course.InstructorId != _userContext.UserId)
+        {
+            return Result.Failure<CourseDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
+
         _courseRepository.Delete(course);
         await _unitOfWork.SaveChangesAsync();
-
-        await _cacheService.RemoveAsync(CachingKeys.CoursesKey);
-        await _cacheService.RemoveAsync(CachingKeys.CourseByIdKey(course.Id));
-        await _cacheService.RemoveAsync(CachingKeys.CoursesByCagetoryIdKey(course.CategoryId));
         return Result.Success();
     }
 
-    public async Task<Result<List<CourseDetailDto>>> GetCourseByCategoryId(Guid categoryId, CancellationToken cancellationToken)
+    public async Task<Result<PagedList<CourseDetailDto>>> GetCourseByCategoryId(Guid categoryId, int pageIndex, int pageSize, CancellationToken cancellationToken)
     {
-        var cachedCourses = await _cacheService.GetAsync<List<CourseDetailDto>>(CachingKeys.CoursesByCagetoryIdKey(categoryId));
-        if (cachedCourses is not null)
-        {
-            return Result.Success(cachedCourses);
-        }
-
         var category = await _categoryService.GetCategoryById(categoryId);
         if (category is null)
         {
-            return Result.Failure<List<CourseDetailDto>>(DomainErrors.Category.NotFound);
+            return Result.Failure<PagedList<CourseDetailDto>>(DomainErrors.Category.NotFound);
         }
 
-        var courses = await _courseRepository.FindAll()
-            .Where(x => x.CategoryId == categoryId).
-            Select(x => new CourseDetailDto(
+        var pagedCourses = await _courseRepository.GetAllByPagingAsync(pageIndex, pageSize, cancellationToken,
+            x => new CourseDetailDto(
                 x.Id,
                 x.CreatedOnUtc,
                 x.ModifiedOnUtc,
@@ -122,29 +119,15 @@ public class CourseService : ICourseService
                     x.Instructor.Email,
                     x.Instructor.UserName,
                     x.Instructor.ProfilePictureUrl)
-            )
-            ).ToListAsync(cancellationToken);
+            ), x => x.CategoryId == categoryId);
 
-        await _cacheService.SetAsync(CachingKeys.CoursesByCagetoryIdKey(categoryId), courses, TimeSpan.FromMinutes(60));
-        return Result.Success(courses);
+        return Result.Success(pagedCourses);
     }
 
     public async Task<Result<CourseDetailDto>> GetCourseById(Guid courseId)
     {
-        var cachedCourse = await _cacheService.GetAsync<CourseDetailDto>(CachingKeys.CourseByIdKey(courseId));
-        if (cachedCourse is not null)
-        {
-            return Result.Success(cachedCourse);
-        }
-
-        var course = await _courseRepository.GetAsync(x => x.Id == courseId);
-        if (course is null)
-        {
-            return Result.Failure<CourseDetailDto>(DomainErrors.Course.NotFound);
-        }
-        await _cacheService.SetAsync(CachingKeys.CourseByIdKey(courseId), course, TimeSpan.FromMinutes(60));
-        return Result.Success(
-            new CourseDetailDto(
+        var course = await _courseRepository.Find(x => x.Id == courseId)
+            .Select(course => new CourseDetailDto(
                 course.Id,
                 course.CreatedOnUtc,
                 course.ModifiedOnUtc,
@@ -164,34 +147,42 @@ public class CourseService : ICourseService
                     course.Instructor.Email,
                     course.Instructor.UserName,
                     course.Instructor.ProfilePictureUrl)
+            )).FirstAsync();
+        if (course is null)
+        {
+            return Result.Failure<CourseDetailDto>(DomainErrors.Course.NotFound);
+        }
+        return Result.Success(course);
+    }
+
+    public async Task<Result<PagedList<CourseDetailDto>>> GetCourses(int pageIndex, int pageSize, CancellationToken cancellationToken)
+    {
+        
+        var pagedCourses = await _courseRepository.GetAllByPagingAsync(pageIndex, pageSize, cancellationToken,
+            course => new CourseDetailDto(
+                course.Id,
+                course.CreatedOnUtc,
+                course.ModifiedOnUtc,
+                course.Name,
+                course.Description,
+                course.Price,
+                course.ImageUrl,
+                 new CategoryDto(
+                        course.Category.Id,
+                        course.Category.CreatedOnUtc,
+                        course.Category.ModifiedOnUtc,
+                        course.Category.Name),
+                new UserDto(
+                    course.Instructor.Id,
+                    course.Instructor.CreatedOnUtc,
+                    course.Instructor.FullName,
+                    course.Instructor.Email,
+                    course.Instructor.UserName,
+                    course.Instructor.ProfilePictureUrl)
             )
         );
 
-    }
-
-    public async Task<Result<List<CourseDto>>> GetCourses(CancellationToken cancellationToken)
-    {
-        var cachedCourses = await _cacheService.GetAsync<List<CourseDto>>(CachingKeys.CoursesKey);
-        if(cachedCourses is not null)
-        {
-            return Result.Success(cachedCourses);
-        }
-
-        var courses = await _courseRepository.FindAll()
-            .Select(x => new CourseDto(
-                x.Id,
-                x.CreatedOnUtc, 
-                x.ModifiedOnUtc, 
-                x.Name, 
-                x.Description, 
-                x.Price, 
-                x.ImageUrl, 
-                x.CategoryId,
-                x.InstructorId)
-            ).ToListAsync(cancellationToken);
-
-        await _cacheService.SetAsync(CachingKeys.CoursesKey, courses, TimeSpan.FromMinutes(60));
-        return Result.Success(courses);
+        return Result.Success(pagedCourses);
     }
 
     public async Task<Result> Update(Guid courseId, CourseUpdateDto courseUpdateDto)
@@ -199,7 +190,7 @@ public class CourseService : ICourseService
         var validationResult = await _courseUpdateDtoValidator.ValidateAsync(courseUpdateDto);
         if (!validationResult.IsValid)
         {
-            var errors = validationResult.Errors.Select(x => DomainErrors.User.CannotCreate(x.ErrorMessage)).ToList();
+            var errors = validationResult.Errors.Select(x => DomainErrors.Course.CannotUpdate(x.ErrorMessage)).ToList();
             return Result.Failure(errors);
         }
 
@@ -208,7 +199,13 @@ public class CourseService : ICourseService
         {
             return Result.Failure(DomainErrors.Course.NotFound);
         }
-        if(courseUpdateDto.CategoryId != null)
+
+        if (course.InstructorId == Guid.Empty || course.InstructorId != _userContext.UserId)
+        {
+            return Result.Failure<CourseDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
+
+        if (courseUpdateDto.CategoryId != null)
         {
             var category = await _categoryService.GetCategoryById((Guid)courseUpdateDto.CategoryId);
             if (category is null)
@@ -216,13 +213,10 @@ public class CourseService : ICourseService
                 return Result.Failure(DomainErrors.Category.NotFound);
             }
         }
-        course.Update(courseUpdateDto.Name, courseUpdateDto.Description, courseUpdateDto.Price, courseUpdateDto.ImageUrl, courseUpdateDto.CategoryId);
+        course.Update(courseUpdateDto.Name, courseUpdateDto.Description, courseUpdateDto.Price, courseUpdateDto.CategoryId);
         _courseRepository.Update(course);
         await _unitOfWork.SaveChangesAsync();
        
-        await _cacheService.RemoveAsync(CachingKeys.CoursesKey);
-        await _cacheService.RemoveAsync(CachingKeys.CourseByIdKey(course.Id));
-        await _cacheService.RemoveAsync(CachingKeys.CoursesByCagetoryIdKey(course.CategoryId));
         return Result.Success();
     }
 
@@ -242,11 +236,114 @@ public class CourseService : ICourseService
         course.AddUserToCourse(new Enrollment(userId, courseId));
         _courseRepository.Update(course);
         await _unitOfWork.SaveChangesAsync();
-       
-        await _cacheService.RemoveAsync(CachingKeys.CoursesKey);
-        await _cacheService.RemoveAsync(CachingKeys.CourseByIdKey(course.Id));
-        await _cacheService.RemoveAsync(CachingKeys.CoursesByCagetoryIdKey(course.CategoryId));
 
         return Result.Success();
+    }
+
+    public async Task<Result<List<CourseDetailDto>>> GetCoursesByEnrollmentUserId(Guid userId, CancellationToken cancellationToken)
+    {
+        if (userId == Guid.Empty || userId != _userContext.UserId)
+        {
+            return Result.Failure<List<CourseDetailDto>>(DomainErrors.Authentication.InvalidPermissions);
+        }
+
+        var userCourses = await _courseRepository.FindAll()
+            .Where(c => c.Enrollments.Any(c => c.UserId == userId))
+            .Select(x => new CourseDetailDto(x.Id, x.CreatedOnUtc, x.ModifiedOnUtc, x.Name, x.Description, x.Price, x.ImageUrl,
+                new CategoryDto(x.Category.Id, x.Category.CreatedOnUtc, x.ModifiedOnUtc, x.Name),
+                new UserDto(x.Instructor.Id, x.Instructor.CreatedOnUtc, x.Instructor.FullName, x.Instructor.Email, x.Instructor.UserName, x.Instructor.ProfilePictureUrl))
+            ).ToListAsync(cancellationToken);
+
+        return Result.Success(userCourses);
+    }
+
+    public async Task<Result<List<CourseDetailDto>>> GetCoursesByInstructorId(Guid userId, CancellationToken cancellationToken)
+    {
+        if (userId == Guid.Empty || userId != _userContext.UserId)
+        {
+            return Result.Failure<List<CourseDetailDto>>(DomainErrors.Authentication.InvalidPermissions);
+        }
+        var userCourses = await _courseRepository.FindAll()
+            .Where(c => c.InstructorId == userId)
+            .Select(x => new CourseDetailDto(x.Id, x.CreatedOnUtc, x.ModifiedOnUtc, x.Name, x.Description, x.Price, x.ImageUrl,
+                new CategoryDto(x.Category.Id, x.Category.CreatedOnUtc, x.ModifiedOnUtc, x.Name),
+                new UserDto(x.Instructor.Id, x.Instructor.CreatedOnUtc, x.Instructor.FullName, x.Instructor.Email, x.Instructor.UserName, x.Instructor.ProfilePictureUrl))
+            ).ToListAsync(cancellationToken);
+        return Result.Success(userCourses);
+    }
+
+    public async Task<Result> UpdateCourseImage(Guid courseId, string fileExtension, byte[] fileData, CancellationToken cancellationToken)
+    {
+        var course = await _courseRepository.GetAsync(x => x.Id == courseId);
+        if (course is null)
+        {
+            return Result.Failure(DomainErrors.Course.NotFound);
+        }
+        if (course.InstructorId == Guid.Empty || course.InstructorId != _userContext.UserId)
+        {
+            return Result.Failure<List<CourseDetailDto>>(DomainErrors.Authentication.InvalidPermissions);
+        }
+        var url = await _blobStorageService.UploadCourseImageFileAsync(course.InstructorId, courseId, fileExtension, fileData, cancellationToken);
+        course.UpdateCourseImage(url);
+        _courseRepository.Update(course);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        return Result.Success();
+    }
+
+    public async Task<Result> RemoveCourseImage(Guid courseId, CancellationToken cancellationToken)
+    {
+        var course = await _courseRepository.GetAsync(x => x.Id == courseId);
+        if (course is null)
+        {
+            return Result.Failure(DomainErrors.Course.NotFound);
+        }
+        if (course.InstructorId == Guid.Empty || course.InstructorId != _userContext.UserId)
+        {
+            return Result.Failure<List<CourseDetailDto>>(DomainErrors.Authentication.InvalidPermissions);
+        }
+        if (string.IsNullOrEmpty(course.ImageUrl))
+        {
+            return Result.Failure(DomainErrors.Course.ImageUrlAlreadyDeleted);
+        }
+        await _blobStorageService.RemoveCourseImageAsync(courseId, course.ImageUrl, cancellationToken);
+        course.UpdateCourseImage(string.Empty);
+        _courseRepository.Update(course);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        return Result.Success();
+    }
+
+    public async Task<Result<List<CourseDetailDto>>> SearchCoursesByName(string searchName, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(searchName))
+        {
+            return Result.Failure<List<CourseDetailDto>>(ValidationErrors.Course.SearchNameIsRequired);
+        }
+
+        var courses = await _courseRepository.FindAll()
+            .Where(c => c.Name.ToLower().Contains(searchName.ToLower()))
+            .Select(course => new CourseDetailDto(
+                course.Id,
+                course.CreatedOnUtc,
+                course.ModifiedOnUtc,
+                course.Name,
+                course.Description,
+                course.Price,
+                course.ImageUrl,
+                new CategoryDto(
+                        course.Category.Id,
+                        course.Category.CreatedOnUtc,
+                        course.Category.ModifiedOnUtc,
+                        course.Category.Name),
+                new UserDto(
+                    course.Instructor.Id,
+                    course.Instructor.CreatedOnUtc,
+                    course.Instructor.FullName,
+                    course.Instructor.Email,
+                    course.Instructor.UserName,
+                    course.Instructor.ProfilePictureUrl))
+            ).ToListAsync(cancellationToken);
+
+
+        return Result.Success(courses);
     }
 }

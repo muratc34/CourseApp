@@ -1,10 +1,4 @@
-﻿using API.Extensions;
-using Application.DTOs;
-using Application.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace API.Controllers
+﻿namespace API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -18,16 +12,16 @@ namespace API.Controllers
         }
 
         [HttpPost]
-        [Authorize("user")]
+        [Authorize(Roles = "user")]
         public async Task<IActionResult> Create(OrderCreateDto orderCreateDto)
         {
             var result = await _orderService.Create(orderCreateDto);
-            return result.IsSuccess ? CreatedAtAction(nameof(GetById), new { orderId = result.Data.Id }, result.Data) : result.ToProblemDetails();
+            return result.IsSuccess ? CreatedAtAction(nameof(GetById), new { orderId = result.Data.Id }, result) : result.ToProblemDetails();
         }
 
         [HttpDelete]
         [Route("{orderId}")]
-        [Authorize("user")]
+        [Authorize(Roles = "user")]
         public async Task<IActionResult> Delete(Guid orderId)
         {
             var result = await _orderService.Delete(orderId);
@@ -36,16 +30,16 @@ namespace API.Controllers
 
         [HttpGet]
         [Route("Users/{userId}")]
-        [Authorize("user")]
-        public async Task<IActionResult> GetByUserId(Guid userId, CancellationToken cancellationToken)
+        [Authorize(Roles = "user")]
+        public async Task<IActionResult> GetByUserId(Guid userId, CancellationToken cancellationToken, int pageIndex = 1, int pageSize = 12)
         {
-            var result = await _orderService.GetOrdersByUserId(userId, cancellationToken);
+            var result = await _orderService.GetOrdersByUserId(userId, pageIndex, pageSize, cancellationToken);
             return result.IsSuccess ? Ok(result) : result.ToProblemDetails();
         }
 
         [HttpGet]
         [Route("{orderId}")]
-        [Authorize("user")]
+        [Authorize(Roles = "user")]
         public async Task<IActionResult> GetById(Guid orderId)
         {
             var result = await _orderService.GetOrderById(orderId);

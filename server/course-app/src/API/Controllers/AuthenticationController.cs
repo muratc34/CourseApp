@@ -1,10 +1,4 @@
-﻿using API.Extensions;
-using Application.DTOs;
-using Application.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace API.Controllers;
+﻿namespace API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -36,31 +30,31 @@ public class AuthenticationController : ControllerBase
 
     [HttpPost]
     [Route("CreateTokenByRefreshToken")]
-    public async Task<IActionResult> CreateTokenByRefreshToken(string refreshToken)
+    public async Task<IActionResult> CreateTokenByRefreshToken(RefreshTokenDto refreshTokenDto)
     {
-        var result = await _authenticationService.CreateTokenByRefreshToken(refreshToken);
+        var result = await _authenticationService.CreateTokenByRefreshToken(refreshTokenDto.Token);
         return result.IsSuccess ? Ok(result) : result.ToProblemDetails();
     }
 
     [HttpPost]
     [Route("ExterminateRefreshToken")]
-    public async Task<IActionResult> ExterminateRefreshToken(string refreshToken)
+    public async Task<IActionResult> ExterminateRefreshToken(RefreshTokenDto refreshTokenDto)
     {
-        var result = await _authenticationService.ExterminateRefreshToken(refreshToken);
+        var result = await _authenticationService.ExterminateRefreshToken(refreshTokenDto.Token);
         return result.IsSuccess ? NoContent() : result.ToProblemDetails();
     }
 
     [HttpPost]
     [Route("ConfirmEmail")]
     [Authorize]
-    public async Task<IActionResult> ConfirmEmail(Guid userId, string token)
+    public async Task<IActionResult> ConfirmEmail(EmailConfirmDto emailConfirmDto)
     {
-        var result = await _authenticationService.EmailConfirmation(userId, token);
+        var result = await _authenticationService.EmailConfirmation(emailConfirmDto);
         return result.IsSuccess ? NoContent() : result.ToProblemDetails();
     }
 
     [HttpPost]
-    [Route("ResendEmailConfirmationToken")]
+    [Route("ResendEmailConfirmationToken/{userId}")]
     [Authorize]
     public async Task<IActionResult> ResendEmailConfirmationToken(Guid userId)
     {

@@ -1,22 +1,4 @@
-﻿using Application.Abstractions.Caching;
-using Application.Abstractions.Emails;
-using Application.Abstractions.Iyzico;
-using Application.Abstractions.Messaging;
-using Application.Abstractions.Notifications;
-using Infrastructure.Caching;
-using Infrastructure.Caching.Settings;
-using Infrastructure.Emails;
-using Infrastructure.Emails.Settings;
-using Infrastructure.Iyzıco;
-using Infrastructure.Iyzıco.Settings;
-using Infrastructure.Messaging;
-using Infrastructure.Messaging.Consumers;
-using Infrastructure.Messaging.Settings;
-using Infrastructure.Notifications;
-using MassTransit;
-using StackExchange.Redis;
-
-namespace Infrastructure;
+﻿namespace Infrastructure;
 
 public static class DependencyInjection
 {
@@ -27,6 +9,7 @@ public static class DependencyInjection
         services.Configure<MailSettings>(configuration.GetSection(MailSettings.SettingsKey));
         services.Configure<MessageBrokerSettings>(configuration.GetSection(MessageBrokerSettings.SettingsKey));
         services.Configure<RedisSettings>(configuration.GetSection(RedisSettings.SettingsKey));
+        services.Configure<BlobSettings>(configuration.GetSection(BlobSettings.SettingsKey));
 
         services.AddDbContext<DatabaseContext>(options =>
         {
@@ -59,6 +42,7 @@ public static class DependencyInjection
         services.AddMassTransit(busConfigurator =>
         {
             busConfigurator.AddConsumer<UserCreatedEventConsumer>();
+            busConfigurator.AddConsumer<CoursePurchasedEventConsumer>();
 
             busConfigurator.SetKebabCaseEndpointNameFormatter();
 
@@ -82,10 +66,10 @@ public static class DependencyInjection
         services.AddScoped<IOrderRepository,  OrderRepository>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
 
+        services.AddScoped<IBlobStorageService, BlobStorageService>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<IJwtProvider, JwtProvider>();
-        services.AddScoped<ICacheService, CacheService>();
 
         services.AddTransient<IIyzicoService, IyzicoService>(); 
         services.AddTransient<IEmailService, EmailService>();
@@ -93,6 +77,7 @@ public static class DependencyInjection
         services.AddTransient<IEventPublisher, RabbitMQEventPublisher>();
 
         services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(configuration["Redis:Host"]));
+        services.AddSingleton<ICacheService, CacheService>();
 
         services.AddAuthorization();
         return services;

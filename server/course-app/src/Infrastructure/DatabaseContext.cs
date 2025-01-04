@@ -1,4 +1,7 @@
-﻿namespace Infrastructure;
+﻿using System;
+using System.Data;
+
+namespace Infrastructure;
 
 public class DatabaseContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
 {
@@ -10,8 +13,8 @@ public class DatabaseContext : IdentityDbContext<ApplicationUser, ApplicationRol
     public DbSet<ApplicationUser> ApplicationUsers { get; set; }
     public DbSet<Category> Categories { get; set; }
     public DbSet<Course> Courses { get; set; }
-    public DbSet<Order> Orders { get; set; }
-    public DbSet<Payment> Payments { get; set; }
+    public DbSet<Domain.Entities.Order> Orders { get; set; }
+    public DbSet<Domain.Entities.Payment> Payments { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -20,14 +23,13 @@ public class DatabaseContext : IdentityDbContext<ApplicationUser, ApplicationRol
         base.OnModelCreating(builder);
     }
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         long utcNow = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
         UpdateAuditableEntities(utcNow);
         UpdateSoftDeletableEntities(utcNow);
-
-        return base.SaveChangesAsync(cancellationToken);
+        return await base.SaveChangesAsync(cancellationToken);
     }
 
     private void UpdateAuditableEntities(long utcNow)
@@ -81,7 +83,7 @@ public class DatabaseContext : IdentityDbContext<ApplicationUser, ApplicationRol
             return;
         }
 
-        foreach (ReferenceEntry referenceEntry in entityEntry.References.Where(r => r.TargetEntry.State == EntityState.Deleted))
+        foreach (ReferenceEntry referenceEntry in entityEntry.References.Where(r => r.TargetEntry?.State == EntityState.Deleted))
         {
             referenceEntry.TargetEntry.State = EntityState.Unchanged;
 

@@ -1,10 +1,4 @@
-﻿using API.Extensions;
-using Application.DTOs;
-using Application.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace API.Controllers;
+﻿namespace API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -18,7 +12,7 @@ public class PaymentsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize("user")]
+    [Authorize(Roles = "user")]
     public async Task<IActionResult> Create(PaymentCreateDto paymentCreateDto)
     {
         var result = await _paymentService.Create(paymentCreateDto);
@@ -27,10 +21,18 @@ public class PaymentsController : ControllerBase
 
     [HttpPost]
     [Route("Callback")]
-    [Authorize("user")]
-    public async Task<IActionResult> PaymentCallback([FromForm] IFormCollection collection)
+    public IActionResult PaymentCallback([FromForm] IFormCollection collection)
     {
-        await _paymentService.Callback(collection["token"]);
-        return Ok();
+        var token = collection["token"];
+        return Redirect($"http://localhost:5173/payment-result?token={token}");
+    }
+
+    [HttpPost]
+    [Route("CheckoutConfirm")]
+    [Authorize(Roles = "user")]
+    public async Task<IActionResult> PaymentCheckoutConfirm(PaymentConfirm paymentConfirm)
+    {
+        var result = await _paymentService.Callback(paymentConfirm.Token);
+        return result.IsSuccess ? NoContent() : result.ToProblemDetails();
     }
 }
