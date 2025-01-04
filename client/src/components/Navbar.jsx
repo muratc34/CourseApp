@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { MdMenu, MdClose } from "react-icons/md";
 import { PiShoppingCartSimpleThin } from "react-icons/pi";
@@ -22,17 +22,16 @@ const Navbar = () => {
     navigate("/");
   }
 
-  const navItems = [
-    { id: 1, title: "Home", path: "/" },
-    { id: 2, title: "Courses", path: "/courses" },
-  ];
-
-  useEffect(() => {
-    if(user && user.roles && user.roles.includes("instructor"))
-    {
-      navItems.push({id:3, title:"Manage Courses", path:"/instructor/courses"})
+  const navItems = useMemo(() => {
+    const items = [
+      { id: 1, title: "Home", path: "/" },
+      { id: 2, title: "Courses", path: "/courses" },
+    ];
+    if (user?.roles?.includes("instructor")) {
+      items.push({ id: 3, title: "Manage Courses", path: "/instructor/courses" });
     }
-  }, [user])
+    return items;
+  }, [user]);
   
 
   const profileNavItems = [
