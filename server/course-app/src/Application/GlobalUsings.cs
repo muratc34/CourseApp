@@ -12,6 +12,7 @@ global using Application.DTOs;
 global using Application.FluentValidations;
 global using Application.Services;
 global using Domain.Authentication;
+global using Domain.Core.Pagination;
 global using Domain.Core;
 global using Domain.Core.Abstractions;
 global using Domain.Core.Errors;

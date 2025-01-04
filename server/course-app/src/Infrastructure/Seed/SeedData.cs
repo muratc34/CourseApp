@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
-
-namespace Infrastructure.Seed;
+﻿namespace Infrastructure.Seed;
 
 public static class SeedData
 {

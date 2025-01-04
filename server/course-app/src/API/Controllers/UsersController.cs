@@ -21,6 +21,7 @@ public class UsersController : ControllerBase
 
     [HttpGet]
     [Route("{userId}")]
+    [Authorize(Roles = "user")]
     public async Task<IActionResult> GetUserById(Guid userId)
     {
         var result = await _userService.GetUserByIdAsync(userId);

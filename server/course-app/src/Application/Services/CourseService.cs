@@ -1,6 +1,4 @@
-﻿using Domain.Core.Pagination;
-
-namespace Application.Services;
+﻿namespace Application.Services;
 public interface ICourseService
 {
     Task<Result<CourseDto>> Create(CourseCreateDto courseCreateDto);
@@ -25,8 +23,8 @@ public class CourseService : ICourseService
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IValidator<CourseCreateDto> _courseCreateDtoValidator;
     private readonly IValidator<CourseUpdateDto> _courseUpdateDtoValidator;
-    private readonly ICacheService _cacheService;
     private readonly IBlobStorageService _blobStorageService;
+    private readonly IUserContext _userContext;
 
     public CourseService(
         ICourseRepository courseRepository,
@@ -35,8 +33,8 @@ public class CourseService : ICourseService
         UserManager<ApplicationUser> userManager,
         IValidator<CourseCreateDto> courseCreateDtoValidator,
         IValidator<CourseUpdateDto> courseUpdateDtoValidator,
-        ICacheService cacheService,
-        IBlobStorageService blobStorageService)
+        IBlobStorageService blobStorageService,
+        IUserContext userContext)
     {
         _courseRepository = courseRepository;
         _unitOfWork = unitOfWork;
@@ -44,12 +42,17 @@ public class CourseService : ICourseService
         _userManager = userManager;
         _courseCreateDtoValidator = courseCreateDtoValidator;
         _courseUpdateDtoValidator = courseUpdateDtoValidator;
-        _cacheService = cacheService;
         _blobStorageService = blobStorageService;
+        _userContext = userContext;
     }
 
     public async Task<Result<CourseDto>> Create(CourseCreateDto courseCreateDto)
     {
+        if (courseCreateDto.InstructorId == Guid.Empty || courseCreateDto.InstructorId != _userContext.UserId)
+        {
+            return Result.Failure<CourseDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
+
         var validationResult = await _courseCreateDtoValidator.ValidateAsync(courseCreateDto);
         if (!validationResult.IsValid)
         {
@@ -67,10 +70,6 @@ public class CourseService : ICourseService
 
         await _courseRepository.CreateAsync(course);
         await _unitOfWork.SaveChangesAsync();
-
-        await _cacheService.RemoveAsync(CachingKeys.CoursesRemoveKey);
-        await _cacheService.RemoveAsync(CachingKeys.CoursesByCagetoryIdRemoveKey(course.CategoryId));
-
         return Result.Success(new CourseDto(course.Id, course.CreatedOnUtc, course.ModifiedOnUtc, course.Name, course.Description, course.Price, course.ImageUrl, course.CategoryId, course.InstructorId));
     }
 
@@ -81,25 +80,18 @@ public class CourseService : ICourseService
         {
             return Result.Failure(DomainErrors.Course.NotFound);
         }
+        if (course.InstructorId == Guid.Empty || course.InstructorId != _userContext.UserId)
+        {
+            return Result.Failure<CourseDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
+
         _courseRepository.Delete(course);
         await _unitOfWork.SaveChangesAsync();
-
-        await _cacheService.RemoveAsync(CachingKeys.CoursesRemoveKey);
-        await _cacheService.RemoveAsync(CachingKeys.CourseByIdKey(course.Id));
-        await _cacheService.RemoveAsync(CachingKeys.CoursesByCagetoryIdRemoveKey(course.CategoryId));
-        await _cacheService.RemoveAsync(CachingKeys.UserCoursesByEnrollmentUserIdRemoveAllKey);
-        await _cacheService.RemoveAsync(CachingKeys.UserCoursesByInstructorUserIdRemoveAllKey);
         return Result.Success();
     }
 
     public async Task<Result<PagedList<CourseDetailDto>>> GetCourseByCategoryId(Guid categoryId, int pageIndex, int pageSize, CancellationToken cancellationToken)
     {
-        var cachedCourses = await _cacheService.GetAsync<PagedList<CourseDetailDto>>(CachingKeys.CoursesByCagetoryIdKey(categoryId, pageIndex, pageSize));
-        if (cachedCourses is not null)
-        {
-            return Result.Success(cachedCourses);
-        }
-
         var category = await _categoryService.GetCategoryById(categoryId);
         if (category is null)
         {
@@ -129,18 +121,11 @@ public class CourseService : ICourseService
                     x.Instructor.ProfilePictureUrl)
             ), x => x.CategoryId == categoryId);
 
-        await _cacheService.SetAsync(CachingKeys.CoursesByCagetoryIdKey(categoryId, pageIndex, pageSize), pagedCourses, TimeSpan.FromMinutes(60));
         return Result.Success(pagedCourses);
     }
 
     public async Task<Result<CourseDetailDto>> GetCourseById(Guid courseId)
     {
-        var cachedCourse = await _cacheService.GetAsync<CourseDetailDto>(CachingKeys.CourseByIdKey(courseId));
-        if (cachedCourse is not null)
-        {
-            return Result.Success(cachedCourse);
-        }
-
         var course = await _courseRepository.Find(x => x.Id == courseId)
             .Select(course => new CourseDetailDto(
                 course.Id,
@@ -167,17 +152,12 @@ public class CourseService : ICourseService
         {
             return Result.Failure<CourseDetailDto>(DomainErrors.Course.NotFound);
         }
-        await _cacheService.SetAsync(CachingKeys.CourseByIdKey(courseId), course, TimeSpan.FromMinutes(60));
         return Result.Success(course);
     }
 
     public async Task<Result<PagedList<CourseDetailDto>>> GetCourses(int pageIndex, int pageSize, CancellationToken cancellationToken)
     {
-        var cachedCourses = await _cacheService.GetAsync<PagedList<CourseDetailDto>>(CachingKeys.CoursesKey(pageIndex, pageSize));
-        if(cachedCourses is not null)
-        {
-            return Result.Success(cachedCourses);
-        }
+        
         var pagedCourses = await _courseRepository.GetAllByPagingAsync(pageIndex, pageSize, cancellationToken,
             course => new CourseDetailDto(
                 course.Id,
@@ -201,7 +181,7 @@ public class CourseService : ICourseService
                     course.Instructor.ProfilePictureUrl)
             )
         );
-        await _cacheService.SetAsync(CachingKeys.CoursesKey(pageIndex, pageSize), pagedCourses, TimeSpan.FromMinutes(60));
+
         return Result.Success(pagedCourses);
     }
 
@@ -219,7 +199,13 @@ public class CourseService : ICourseService
         {
             return Result.Failure(DomainErrors.Course.NotFound);
         }
-        if(courseUpdateDto.CategoryId != null)
+
+        if (course.InstructorId == Guid.Empty || course.InstructorId != _userContext.UserId)
+        {
+            return Result.Failure<CourseDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
+
+        if (courseUpdateDto.CategoryId != null)
         {
             var category = await _categoryService.GetCategoryById((Guid)courseUpdateDto.CategoryId);
             if (category is null)
@@ -231,11 +217,6 @@ public class CourseService : ICourseService
         _courseRepository.Update(course);
         await _unitOfWork.SaveChangesAsync();
        
-        await _cacheService.RemoveAsync(CachingKeys.CoursesRemoveKey);
-        await _cacheService.RemoveAsync(CachingKeys.CourseByIdKey(course.Id));
-        await _cacheService.RemoveAsync(CachingKeys.CoursesByCagetoryIdRemoveKey(course.CategoryId));
-        await _cacheService.RemoveAsync(CachingKeys.UserCoursesByEnrollmentUserIdRemoveAllKey);
-        await _cacheService.RemoveAsync(CachingKeys.UserCoursesByInstructorUserIdRemoveAllKey);
         return Result.Success();
     }
 
@@ -255,21 +236,15 @@ public class CourseService : ICourseService
         course.AddUserToCourse(new Enrollment(userId, courseId));
         _courseRepository.Update(course);
         await _unitOfWork.SaveChangesAsync();
-       
-        await _cacheService.RemoveAsync(CachingKeys.CoursesRemoveKey);
-        await _cacheService.RemoveAsync(CachingKeys.CourseByIdKey(course.Id));
-        await _cacheService.RemoveAsync(CachingKeys.CoursesByCagetoryIdRemoveKey(course.CategoryId));
-        await _cacheService.RemoveAsync(CachingKeys.UserCoursesByEnrollmentUserIdRemoveAllKey);
 
         return Result.Success();
     }
 
     public async Task<Result<List<CourseDetailDto>>> GetCoursesByEnrollmentUserId(Guid userId, CancellationToken cancellationToken)
     {
-        var cachedCourses = await _cacheService.GetAsync<List<CourseDetailDto>>(CachingKeys.UserCoursesByEnrollmentUserIdKey(userId));
-        if (cachedCourses is not null)
+        if (userId == Guid.Empty || userId != _userContext.UserId)
         {
-            return Result.Success(cachedCourses);
+            return Result.Failure<List<CourseDetailDto>>(DomainErrors.Authentication.InvalidPermissions);
         }
 
         var userCourses = await _courseRepository.FindAll()
@@ -279,16 +254,14 @@ public class CourseService : ICourseService
                 new UserDto(x.Instructor.Id, x.Instructor.CreatedOnUtc, x.Instructor.FullName, x.Instructor.Email, x.Instructor.UserName, x.Instructor.ProfilePictureUrl))
             ).ToListAsync(cancellationToken);
 
-        await _cacheService.SetAsync(CachingKeys.UserCoursesByEnrollmentUserIdKey(userId), userCourses, TimeSpan.FromMinutes(60));
         return Result.Success(userCourses);
     }
 
     public async Task<Result<List<CourseDetailDto>>> GetCoursesByInstructorId(Guid userId, CancellationToken cancellationToken)
     {
-        var cachedCourses = await _cacheService.GetAsync<List<CourseDetailDto>>(CachingKeys.UserCoursesByInstructorUserIdKey(userId));
-        if (cachedCourses is not null)
+        if (userId == Guid.Empty || userId != _userContext.UserId)
         {
-            return Result.Success(cachedCourses);
+            return Result.Failure<List<CourseDetailDto>>(DomainErrors.Authentication.InvalidPermissions);
         }
         var userCourses = await _courseRepository.FindAll()
             .Where(c => c.InstructorId == userId)
@@ -296,7 +269,6 @@ public class CourseService : ICourseService
                 new CategoryDto(x.Category.Id, x.Category.CreatedOnUtc, x.ModifiedOnUtc, x.Name),
                 new UserDto(x.Instructor.Id, x.Instructor.CreatedOnUtc, x.Instructor.FullName, x.Instructor.Email, x.Instructor.UserName, x.Instructor.ProfilePictureUrl))
             ).ToListAsync(cancellationToken);
-        await _cacheService.SetAsync(CachingKeys.UserCoursesByEnrollmentUserIdKey(userId), userCourses, TimeSpan.FromMinutes(60));
         return Result.Success(userCourses);
     }
 
@@ -307,16 +279,14 @@ public class CourseService : ICourseService
         {
             return Result.Failure(DomainErrors.Course.NotFound);
         }
+        if (course.InstructorId == Guid.Empty || course.InstructorId != _userContext.UserId)
+        {
+            return Result.Failure<List<CourseDetailDto>>(DomainErrors.Authentication.InvalidPermissions);
+        }
         var url = await _blobStorageService.UploadCourseImageFileAsync(course.InstructorId, courseId, fileExtension, fileData, cancellationToken);
         course.UpdateCourseImage(url);
         _courseRepository.Update(course);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        await _cacheService.RemoveAsync(CachingKeys.CoursesRemoveKey);
-        await _cacheService.RemoveAsync(CachingKeys.CourseByIdKey(course.Id));
-        await _cacheService.RemoveAsync(CachingKeys.CoursesByCagetoryIdRemoveKey(course.CategoryId));
-        await _cacheService.RemoveAsync(CachingKeys.UserCoursesByEnrollmentUserIdRemoveAllKey);
-        await _cacheService.RemoveAsync(CachingKeys.UserCoursesByInstructorUserIdRemoveAllKey);
         return Result.Success();
     }
 
@@ -327,6 +297,10 @@ public class CourseService : ICourseService
         {
             return Result.Failure(DomainErrors.Course.NotFound);
         }
+        if (course.InstructorId == Guid.Empty || course.InstructorId != _userContext.UserId)
+        {
+            return Result.Failure<List<CourseDetailDto>>(DomainErrors.Authentication.InvalidPermissions);
+        }
         if (string.IsNullOrEmpty(course.ImageUrl))
         {
             return Result.Failure(DomainErrors.Course.ImageUrlAlreadyDeleted);
@@ -335,12 +309,6 @@ public class CourseService : ICourseService
         course.UpdateCourseImage(string.Empty);
         _courseRepository.Update(course);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        await _cacheService.RemoveAsync(CachingKeys.CoursesRemoveKey);
-        await _cacheService.RemoveAsync(CachingKeys.CourseByIdKey(course.Id));
-        await _cacheService.RemoveAsync(CachingKeys.CoursesByCagetoryIdRemoveKey(course.CategoryId));
-        await _cacheService.RemoveAsync(CachingKeys.UserCoursesByEnrollmentUserIdRemoveAllKey);
-        await _cacheService.RemoveAsync(CachingKeys.UserCoursesByInstructorUserIdRemoveAllKey);
         return Result.Success();
     }
 

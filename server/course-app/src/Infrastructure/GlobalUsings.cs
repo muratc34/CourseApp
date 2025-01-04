@@ -17,6 +17,8 @@ global using Application.Core.Extensions;
 global using Domain.Authentication;
 global using Domain.Core;
 global using Domain.Core.Abstractions;
+global using Microsoft.AspNetCore.Builder;
+global using Domain.Core.Pagination;
 global using Domain.Entities;
 global using Domain.Events;
 global using Infrastructure.Authentication;

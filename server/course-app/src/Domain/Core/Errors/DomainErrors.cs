@@ -21,6 +21,7 @@ public static class DomainErrors
     }
     public static class Authentication
     {
+        public static Error InvalidPermissions => Error.Failure("Authentication.InvalidPermissions", "The current user does not have the permissions to perform that operation.");
         public static Error InvalidEmailOrPassword => Error.Failure("Authentication.InvalidEmailOrPassword", "The specified email or password are incorrect.");
         public static Error CannotChangePassword(string message) => Error.Failure("Authentication.CannotChangePassword", message);
     }

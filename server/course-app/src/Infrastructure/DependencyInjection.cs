@@ -66,7 +66,6 @@ public static class DependencyInjection
         services.AddScoped<IOrderRepository,  OrderRepository>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
 
-
         services.AddScoped<IBlobStorageService, BlobStorageService>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IUserContext, UserContext>();

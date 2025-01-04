@@ -1,6 +1,4 @@
-﻿using Domain.Core.Pagination;
-
-namespace Application.Services;
+﻿namespace Application.Services;
 
 public interface IOrderService
 {
@@ -18,7 +16,7 @@ internal class OrderService : IOrderService
     private readonly IUnitOfWork _unitOfWork;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IValidator<OrderCreateDto> _orderCreateDtoValidator;
-    private readonly ICacheService _cacheService;
+    private readonly IUserContext _userContext;
 
     public OrderService(
         IOrderRepository orderRepository,
@@ -26,18 +24,22 @@ internal class OrderService : IOrderService
         IUnitOfWork unitOfWork,
         UserManager<ApplicationUser> userManager,
         IValidator<OrderCreateDto> orderCreateDtoValidator,
-        ICacheService cacheService)
+        IUserContext userContext)
     {
         _orderRepository = orderRepository;
         _courseService = courseService;
         _unitOfWork = unitOfWork;
         _userManager = userManager;
         _orderCreateDtoValidator = orderCreateDtoValidator;
-        _cacheService = cacheService;
+        _userContext = userContext;
     }
 
     public async Task<Result<OrderDto>> Create(OrderCreateDto orderCreateDto)
     {
+        if (orderCreateDto.UserId == Guid.Empty || orderCreateDto.UserId != _userContext.UserId)
+        {
+            return Result.Failure<OrderDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
         var validationResult = await _orderCreateDtoValidator.ValidateAsync(orderCreateDto);
         if (!validationResult.IsValid)
         {
@@ -79,7 +81,6 @@ internal class OrderService : IOrderService
 
         await _orderRepository.CreateAsync(order);
         await _unitOfWork.SaveChangesAsync();
-        await _cacheService.RemoveAsync(CachingKeys.OrdersByUserIdRemoveKey(order.UserId));
         return Result.Success(new OrderDto(order.Id, order.CreatedOnUtc, order.ModifiedOnUtc, order.UserId, order.Status, order.City, order.Country, order.Address, order.ZipCode, order.TcNo));
     }
 
@@ -90,24 +91,24 @@ internal class OrderService : IOrderService
         {
             return Result.Failure(DomainErrors.Order.NotFound);
         }
+        if (order.UserId == Guid.Empty || order.UserId != _userContext.UserId)
+        {
+            return Result.Failure<OrderDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
 
         order.SetStatusAsCancelled();
         _orderRepository.Delete(order);
         await _unitOfWork.SaveChangesAsync();
 
-        await _cacheService.RemoveAsync(CachingKeys.OrdersByUserIdRemoveKey(order.UserId));
-        await _cacheService.RemoveAsync(CachingKeys.OrdersByIdKey(order.Id));
         return Result.Success();
     }
 
     public async Task<Result<PagedList<OrderDetailDto>>> GetOrdersByUserId(Guid userId, int pageIndex, int pageSize, CancellationToken cancellationToken)
     {
-        var cachedOrders = await _cacheService.GetAsync<PagedList<OrderDetailDto>>(CachingKeys.OrdersByUserIdKey(userId, pageIndex, pageSize));
-        if (cachedOrders is not null)
+        if (userId == Guid.Empty || userId != _userContext.UserId)
         {
-            return Result.Success(cachedOrders);
+            return Result.Failure<PagedList<OrderDetailDto>>(DomainErrors.Authentication.InvalidPermissions);
         }
-
         var pagedOrders = await _orderRepository.GetAllByPagingAsync(pageIndex, pageSize, cancellationToken,
             x => new OrderDetailDto(
                 x.Id,
@@ -145,20 +146,22 @@ internal class OrderService : IOrderService
                 x.OrderDetails.Sum(od => od.Course.Price)
             ),x => x.UserId == userId, x => x.OrderByDescending(o => o.CreatedOnUtc));
         
-
-        await _cacheService.SetAsync(CachingKeys.OrdersByUserIdKey(userId, pageIndex, pageSize), pagedOrders, TimeSpan.FromMinutes(60));
         return Result.Success(pagedOrders);
     }
 
     public async Task<Result<OrderDetailDto>> GetOrderById(Guid orderId)
     {
-        var cachedOrders = await _cacheService.GetAsync<OrderDetailDto>(CachingKeys.OrdersByIdKey(orderId));
-        if (cachedOrders is not null)
+        var isExistorder = _orderRepository.Find(x => x.Id == orderId);
+        if (isExistorder is null)
         {
-            return Result.Success(cachedOrders);
+            return Result.Failure<OrderDetailDto>(DomainErrors.Order.NotFound);
         }
-        var order = await _orderRepository.Find(x => x.Id == orderId)
-            .Select(x => new OrderDetailDto(
+        if (isExistorder.First().UserId == Guid.Empty || isExistorder.First().UserId != _userContext.UserId)
+        {
+            return Result.Failure<OrderDetailDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
+
+        var order = await isExistorder.Select(x => new OrderDetailDto(
                 x.Id ,
                 x.CreatedOnUtc, 
                 x.ModifiedOnUtc,
@@ -192,12 +195,7 @@ internal class OrderService : IOrderService
                 x.ZipCode,
                 x.TcNo,
                 x.OrderDetails.Sum(od => od.Course.Price))).FirstAsync();
-
-        if (order is null)
-        {
-            return Result.Failure<OrderDetailDto>(DomainErrors.Order.NotFound);
-        }
-        await _cacheService.SetAsync(CachingKeys.OrdersByIdKey(order.Id), order, TimeSpan.FromMinutes(60));
+        
         return Result.Success(order);
     }
 
@@ -212,8 +210,6 @@ internal class OrderService : IOrderService
         order.SetStatusAsCompleted();
         await _unitOfWork.SaveChangesAsync();
 
-        await _cacheService.RemoveAsync(CachingKeys.OrdersByUserIdRemoveKey(order.UserId));
-        await _cacheService.RemoveAsync(CachingKeys.OrdersByIdKey(order.Id));
         return Result.Success();
     }
 
@@ -228,8 +224,6 @@ internal class OrderService : IOrderService
         order.SetStatusAsFailed();
         await _unitOfWork.SaveChangesAsync();
 
-        await _cacheService.RemoveAsync(CachingKeys.OrdersByUserIdRemoveKey(order.UserId));
-        await _cacheService.RemoveAsync(CachingKeys.OrdersByIdKey(order.Id));
         return Result.Success();
     }
 }

@@ -21,6 +21,7 @@ public class AuthenticationService : IAuthenticationService
     private readonly IValidator<ChangePasswordDto> _changePasswordDtoValidator;
     private readonly ICacheService _cacheService;
     private readonly IEventPublisher _eventPublisher;
+    private readonly IUserContext _userContext;
 
     public AuthenticationService(
         UserManager<ApplicationUser> userManager,
@@ -31,7 +32,8 @@ public class AuthenticationService : IAuthenticationService
         IValidator<LoginDto> loginDtoValidator,
         IValidator<ChangePasswordDto> changePasswordDtoValidator,
         ICacheService cacheService,
-        IEventPublisher eventPublisher)
+        IEventPublisher eventPublisher,
+        IUserContext userContext)
     {
         _userManager = userManager;
         _roleManager = roleManager;
@@ -42,6 +44,7 @@ public class AuthenticationService : IAuthenticationService
         _changePasswordDtoValidator = changePasswordDtoValidator;
         _cacheService = cacheService;
         _eventPublisher = eventPublisher;
+        _userContext = userContext;
     }
 
     public async Task<Result<AccessToken>> LoginAsync(LoginDto loginDto)
@@ -82,6 +85,11 @@ public class AuthenticationService : IAuthenticationService
 
     public async Task<Result> ChangePassword(Guid userId, ChangePasswordDto changePasswordDto)
     {
+        if (userId == Guid.Empty || userId != _userContext.UserId)
+        {
+            return Result.Failure(DomainErrors.Authentication.InvalidPermissions);
+        }
+
         var validationResult = await _changePasswordDtoValidator.ValidateAsync(changePasswordDto);
         if (!validationResult.IsValid)
         {
@@ -145,6 +153,10 @@ public class AuthenticationService : IAuthenticationService
 
     public async Task<Result> EmailConfirmation(EmailConfirmDto emailConfirmDto)
     {
+        if (emailConfirmDto.UserId == Guid.Empty || emailConfirmDto.UserId != _userContext.UserId)
+        {
+            return Result.Failure(DomainErrors.Authentication.InvalidPermissions);
+        }
         var user = await _userManager.FindByIdAsync(emailConfirmDto.UserId.ToString());
         if(user is null)
         {
@@ -187,8 +199,13 @@ public class AuthenticationService : IAuthenticationService
         await _cacheService.RemoveAsync(CachingKeys.EmailVerificationKey(user.Id));
         return Result.Success();
     }
+
     public async Task<Result> ResendEmailConfirmationToken(Guid userId)
     {
+        if (userId == Guid.Empty || userId != _userContext.UserId)
+        {
+            return Result.Failure(DomainErrors.Authentication.InvalidPermissions);
+        }
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user is null)
         {

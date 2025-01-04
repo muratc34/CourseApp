@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.FileSystemGlobbing.Internal;
-
-namespace Infrastructure.Caching;
+﻿namespace Infrastructure.Caching;
 
 public sealed class CacheService : ICacheService
 {

@@ -1,6 +1,4 @@
-﻿using Domain.Core.Pagination;
-
-namespace Infrastructure.Repositories;
+﻿namespace Infrastructure.Repositories;
 
 public class Repository<TEntity> : IRepository<TEntity>
     where TEntity : Entity

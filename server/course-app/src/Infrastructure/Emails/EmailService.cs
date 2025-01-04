@@ -1,6 +1,4 @@
-﻿
-
-namespace Infrastructure.Emails;
+﻿namespace Infrastructure.Emails;
 
 internal sealed class EmailService : IEmailService
 {

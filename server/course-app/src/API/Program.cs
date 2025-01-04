@@ -1,5 +1,3 @@
-using Infrastructure.Seed;
-
 var builder = WebApplication.CreateBuilder(args);
 
 var env = builder.Environment;

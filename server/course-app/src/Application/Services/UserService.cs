@@ -22,6 +22,7 @@ public class UserService : IUserService
     private readonly IRepository<RefreshToken> _refreshTokenRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBlobStorageService _blobStorageService;
+    private readonly IUserContext _userContext;
 
     public UserService(
         UserManager<ApplicationUser> userManager,
@@ -31,7 +32,8 @@ public class UserService : IUserService
         IJwtProvider jwtProvider,
         IRepository<RefreshToken> refreshTokenRepository,
         IUnitOfWork unitOfWork,
-        IBlobStorageService blobStorageService)
+        IBlobStorageService blobStorageService,
+        IUserContext userContext)
     {
         _userManager = userManager;
         _roleManager = roleManager;
@@ -41,6 +43,7 @@ public class UserService : IUserService
         _unitOfWork = unitOfWork;
         _refreshTokenRepository = refreshTokenRepository;
         _blobStorageService = blobStorageService;
+        _userContext = userContext;
     }
 
     public async Task<Result<AccessToken>> CreateAsync(UserCreateDto userCreateDto)
@@ -90,11 +93,19 @@ public class UserService : IUserService
         {
             return Result.Failure<UserDto>(DomainErrors.User.NotFound(userId));
         }
+        if(user.Id != _userContext.UserId)
+        {
+            return Result.Failure<UserDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
         return Result.Success(new UserDto(user.Id, user.CreatedOnUtc, user.FullName, user.Email, user.UserName, user.ProfilePictureUrl));
     }
 
     public async Task<Result> UpdateAsync(Guid userId, UserUpdateDto userUpdateDto)
     {
+        if (userId != _userContext.UserId)
+        {
+            return Result.Failure<UserDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user is null)
         {
@@ -114,6 +125,10 @@ public class UserService : IUserService
 
     public async Task<Result> DeleteAsync(Guid userId)
     {
+        if (userId != _userContext.UserId)
+        {
+            return Result.Failure<UserDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user is null)
         {
@@ -178,6 +193,10 @@ public class UserService : IUserService
 
     public async Task<Result> UpdateUserPicture(Guid userId, string fileExtension, byte[] fileData, CancellationToken cancellationToken)
     {
+        if (userId != _userContext.UserId)
+        {
+            return Result.Failure<UserDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user is null)
         {
@@ -201,6 +220,10 @@ public class UserService : IUserService
 
     public async Task<Result> RemoveUserPicture(Guid userId, CancellationToken cancellationToken)
     {
+        if (userId != _userContext.UserId)
+        {
+            return Result.Failure<UserDto>(DomainErrors.Authentication.InvalidPermissions);
+        }
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user is null)
         {

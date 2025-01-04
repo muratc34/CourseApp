@@ -15,6 +15,7 @@ internal class PaymentService : IPaymentService
     private readonly IValidator<PaymentCreateDto> _paymentCreateDtoValidator;
     private readonly ICourseService _courseService;
     private readonly IEventPublisher _eventPublisher;
+    private readonly IUserContext _userContext;
 
     public PaymentService(
         IPaymentRepository paymentRepository, 
@@ -24,7 +25,8 @@ internal class PaymentService : IPaymentService
         IUnitOfWork unitOfWork,
         IValidator<PaymentCreateDto> paymentCreateDtoValidator,
         ICourseService courseService,
-        IEventPublisher eventPublisher)
+        IEventPublisher eventPublisher,
+        IUserContext userContext)
     {
         _paymentRepository = paymentRepository;
         _iyzicoService = iyzicoService;
@@ -34,6 +36,7 @@ internal class PaymentService : IPaymentService
         _paymentCreateDtoValidator = paymentCreateDtoValidator;
         _courseService = courseService;
         _eventPublisher = eventPublisher;
+        _userContext = userContext;
     }
 
     public async Task<Result<PaymentDto>> Create(PaymentCreateDto paymentCreateDto)
@@ -48,6 +51,10 @@ internal class PaymentService : IPaymentService
         if (order is null)
         {
             return Result.Failure<PaymentDto>(DomainErrors.Order.NotFound);
+        }
+        if(order.User.Id == Guid.Empty || order.User.Id != _userContext.UserId)
+        {
+            return Result.Failure<PaymentDto>(DomainErrors.Authentication.InvalidPermissions);
         }
         if (order.Status == OrderStatuses.Completed)
         {
@@ -87,6 +94,10 @@ internal class PaymentService : IPaymentService
         if (order == null || order.Data == null)
         {
             return Result.Failure(DomainErrors.Order.NotFound);
+        }
+        if (order.Data.User.Id == Guid.Empty || order.Data.User.Id != _userContext.UserId)
+        {
+            return Result.Failure<PaymentDto>(DomainErrors.Authentication.InvalidPermissions);
         }
         if (!confirm.PaymentStatus.Equals("SUCCESS"))
         {
